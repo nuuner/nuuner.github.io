@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <title>Issue extractor</title>
+        <title>Issue Key Extractor</title>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>
@@ -30,8 +30,19 @@
     </head>
 
     <body>
+        <h1>Issue Key Extractor</h1>
+        <div id="intro">
+            <p>
+                This tool parses your text, identifies issue keys based on your
+                specified Regex, and compiles them into a handy JIRA Query
+                Language (JQL) format. It also enables you to modify and save
+                these parameters directly in the URL.
+            </p>
+        </div>
+        <hr />
         <div id="container">
             <div id="inputs">
+                <h2>Inputs</h2>
                 <div id="uriDisclaimer" style="display: none; color: red">
                     <b>⚠️ Too much data to store in the URL.</b> Regex and the
                     extraction text have not been saved in the URL!
@@ -59,6 +70,7 @@
                 <small id="uriLimit"></small>
             </div>
             <div id="results">
+                <h2>Output</h2>
                 <div><span> Number of issues: </span><b id="number">0</b></div>
                 <div>
                     <label for="jql">JQL:</label>
