@@ -126,10 +126,15 @@
                     globalThis.LZString.compressToEncodedURIComponent(
                         regex.value,
                     );
+                const currentParams = new URLSearchParams(
+                    window.location.search,
+                );
+                currentParams.set("text", encodedText);
+                currentParams.set("regex", encodedRegex);
                 window.history.replaceState(
                     null,
                     null,
-                    `?text=${encodedText}&regex=${encodedRegex}`,
+                    currentParams.toString(),
                 );
             }
 
@@ -151,6 +156,37 @@
                 }
             }
 
+            function encodeDimensionsAndAddToUrl() {
+                const width = text.offsetWidth.toString();
+                const height = text.offsetHeight.toString();
+                const currentParams = new URLSearchParams(
+                    window.location.search,
+                );
+                currentParams.set("width", width);
+                currentParams.set("height", height);
+                window.history.replaceState(
+                    null,
+                    null,
+                    "?" + currentParams.toString(),
+                );
+            }
+
+            function decodeDimensionsFromUrl() {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get("width") != null) {
+                    const width = parseInt(urlParams.get("width"), 10);
+                    if (!isNaN(width)) {
+                        text.style.width = width + "px";
+                    }
+                }
+                if (urlParams.get("height") != null) {
+                    const height = parseInt(urlParams.get("height"), 10);
+                    if (!isNaN(height)) {
+                        text.style.height = height + "px";
+                    }
+                }
+            }
+
             function refresh() {
                 findIssues();
                 updateIssues();
@@ -165,6 +201,10 @@
                 });
             }
 
+            text.addEventListener("mouseup", () => {
+                encodeDimensionsAndAddToUrl();
+            });
+
             document.addEventListener("DOMContentLoaded", () => {
                 exampleText = `V načrtu bomo naredili več stvari.
 
@@ -174,6 +214,7 @@ Potem pa bomo to še testirali v IX-333333 `;
                 text.value = exampleText;
 
                 decodeTextAndRegexFromUrl();
+                decodeDimensionsFromUrl();
                 refresh();
             });
         </script>
