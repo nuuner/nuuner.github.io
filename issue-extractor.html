@@ -117,27 +117,6 @@
                 }
             }
 
-            function encodeTextAndRegexAndAddToUrl() {
-                const encodedText =
-                    globalThis.LZString.compressToEncodedURIComponent(
-                        text.value,
-                    );
-                const encodedRegex =
-                    globalThis.LZString.compressToEncodedURIComponent(
-                        regex.value,
-                    );
-                const currentParams = new URLSearchParams(
-                    window.location.search,
-                );
-                currentParams.set("text", encodedText);
-                currentParams.set("regex", encodedRegex);
-                window.history.replaceState(
-                    null,
-                    null,
-                    currentParams.toString(),
-                );
-            }
-
             function decodeTextAndRegexFromUrl() {
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get("text") != null) {
@@ -156,21 +135,6 @@
                 }
             }
 
-            function encodeDimensionsAndAddToUrl() {
-                const width = text.offsetWidth.toString();
-                const height = text.offsetHeight.toString();
-                const currentParams = new URLSearchParams(
-                    window.location.search,
-                );
-                currentParams.set("width", width);
-                currentParams.set("height", height);
-                window.history.replaceState(
-                    null,
-                    null,
-                    "?" + currentParams.toString(),
-                );
-            }
-
             function decodeDimensionsFromUrl() {
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get("width") != null) {
@@ -185,6 +149,42 @@
                         text.style.height = height + "px";
                     }
                 }
+            }
+
+            function encodeDimensionsAndAddToUrl() {
+                const width = text.offsetWidth.toString();
+                const height = text.offsetHeight.toString();
+                const currentParams = new URLSearchParams(
+                    window.location.search,
+                );
+                currentParams.set("width", width);
+                currentParams.set("height", height);
+                window.history.replaceState(
+                    null,
+                    null,
+                    "issue_extractor.html?" + currentParams.toString(),
+                );
+            }
+
+            function encodeTextAndRegexAndAddToUrl() {
+                const encodedText =
+                    globalThis.LZString.compressToEncodedURIComponent(
+                        text.value,
+                    );
+                const encodedRegex =
+                    globalThis.LZString.compressToEncodedURIComponent(
+                        regex.value,
+                    );
+                const currentParams = new URLSearchParams(
+                    window.location.search,
+                );
+                currentParams.set("text", encodedText);
+                currentParams.set("regex", encodedRegex);
+                window.history.replaceState(
+                    null,
+                    null,
+                    "issue_extractor.html?" + currentParams.toString(),
+                );
             }
 
             function refresh() {
