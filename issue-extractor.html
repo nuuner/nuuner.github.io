@@ -135,16 +135,20 @@
 
             function decodeTextAndRegexFromUrl() {
                 const urlParams = new URLSearchParams(window.location.search);
-                const decodedText =
-                    globalThis.LZString.decompressFromEncodedURIComponent(
-                        urlParams.get("text"),
-                    );
-                const decodedRegex =
-                    globalThis.LZString.decompressFromEncodedURIComponent(
-                        urlParams.get("regex"),
-                    );
-                text.value = decodedText;
-                regex.value = decodedRegex;
+                if (urlParams.get("text") != null) {
+                    const decodedText =
+                        globalThis.LZString.decompressFromEncodedURIComponent(
+                            urlParams.get("text"),
+                        );
+                    text.value = decodedText;
+                }
+                if (urlParams.get("regex" != null)) {
+                    const decodedRegex =
+                        globalThis.LZString.decompressFromEncodedURIComponent(
+                            urlParams.get("regex"),
+                        );
+                    regex.value = decodedRegex;
+                }
             }
 
             function refresh() {
@@ -164,9 +168,9 @@
             document.addEventListener("DOMContentLoaded", () => {
                 exampleText = `V načrtu bomo naredili več stvari.
 
-V prvem delu bomo implementirali zaledje (IX-503940) in UI, ta je že napol narejen v IX-123456.
+            V prvem delu bomo implementirali zaledje (IX-503940) in UI, ta je že napol narejen v IX-123456.
 
-Potem pa bomo to še testirali v IX-333333 `;
+            Potem pa bomo to še testirali v IX-333333 `;
                 text.value = exampleText;
 
                 decodeTextAndRegexFromUrl();
