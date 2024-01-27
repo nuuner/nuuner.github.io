@@ -32,6 +32,10 @@
     <body>
         <div id="container">
             <div id="inputs">
+                <div id="uriDisclaimer" style="display: none; color: red">
+                    <b>⚠️ Too much data to store in the URL.</b> Regex and the
+                    extraction text have not been saved in the URL!
+                </div>
                 <label for="regex">Issue Key Regex:</label>
                 <input
                     name="regex"
@@ -52,6 +56,7 @@
                     autocomplete="off"
                 >
                 </textarea>
+                <small id="uriLimit"></small>
             </div>
             <div id="results">
                 <div><span> Number of issues: </span><b id="number">0</b></div>
@@ -74,6 +79,7 @@
             </div>
         </div>
         <script>
+            const GITHUB_PAGES_URI_MAX_LENGTH = 8200;
             const regex = document.getElementById("regex");
             const text = document.getElementById("extractionText");
 
@@ -185,6 +191,33 @@
                     null,
                     "issue_extractor.html?" + currentParams.toString(),
                 );
+                handleUriLength();
+            }
+
+            function handleUriLength() {
+                document.getElementById("uriLimit").innerText =
+                    Math.round(
+                        (window.location.href.length /
+                            GITHUB_PAGES_URI_MAX_LENGTH) *
+                            100,
+                    ) + "%";
+                if (window.location.href.length > GITHUB_PAGES_URI_MAX_LENGTH) {
+                    const currentParams = new URLSearchParams(
+                        window.location.search,
+                    );
+                    document.getElementById("uriDisclaimer").style.display =
+                        "block";
+                    currentParams.delete("text");
+                    currentParams.delete("regex");
+                    window.history.replaceState(
+                        null,
+                        null,
+                        "issue_extractor.html?" + currentParams.toString(),
+                    );
+                } else {
+                    document.getElementById("uriDisclaimer").style.display =
+                        "none";
+                }
             }
 
             function refresh() {
