@@ -27,7 +27,9 @@
             }
         </style>
         <link rel="stylesheet" href="dark-mode.css" />
+        <link rel="stylesheet" href="style.css" />
         <script src="compress.min.js"></script>
+        <script src="issue_extractor.js"></script>
     </head>
 
     <body>
@@ -72,18 +74,31 @@
             </div>
             <div id="results">
                 <h2>Output</h2>
-                <div><span> Number of issues: </span><b id="number">0</b></div>
                 <div>
-                    <label for="jql">JQL:</label>
+                    <span> Number of issues: </span><b id="number">0</b>
+                    <button id="copyList">Copy list</button>
+                </div>
+                <div>
+                    <label for="jql">JQL:</label><br />
                     <input
                         name="jql"
                         id="jql"
                         type="text"
                         readonly
-                        style="width: 400px"
                         autocomplete="off"
                     />
-                    <button onclick="copyJql()">Copy to clipboard</button>
+                    <button id="copyJql">Copy to clipboard</button>
+                </div>
+                <div>
+                    <label for="bash">Save to file (Bash):</label><br />
+                    <input
+                        name="bash"
+                        id="bash"
+                        type="text"
+                        readonly
+                        autocomplete="off"
+                    />
+                    <button id="copyBash">Copy to clipboard</button>
                 </div>
                 <div>
                     <label>Found issues:</label>
@@ -91,178 +106,5 @@
                 </div>
             </div>
         </div>
-        <script>
-            const GITHUB_PAGES_URI_MAX_LENGTH = 8200;
-            const regex = document.getElementById("regex");
-            const text = document.getElementById("extractionText");
-
-            let issues = [];
-
-            function findIssues() {
-                const matches = text.value.match(new RegExp(regex.value, "g"));
-                issues = matches ? matches : [];
-                return issues;
-            }
-
-            function getJql() {
-                const jql = issues
-                    ? "issuekey in (" + issues.join(", ") + ")"
-                    : "";
-                return jql;
-            }
-
-            function jqlToResults() {
-                document.getElementById("jql").value = getJql();
-            }
-
-            function copyJql() {
-                const jql = document.getElementById("jql");
-                jql.select();
-                jql.setSelectionRange(0, 99999);
-                document.execCommand("copy");
-            }
-
-            function updateNumber() {
-                document.getElementById("number").innerText = issues.length;
-            }
-
-            function updateIssues() {
-                const list = document.getElementById("issues");
-                list.innerHTML = "";
-                for (const issue of issues) {
-                    const li = document.createElement("li");
-                    li.innerText = issue;
-                    list.appendChild(li);
-                }
-            }
-
-            function decodeTextAndRegexFromUrl() {
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get("text") != null) {
-                    const decodedText =
-                        globalThis.LZString.decompressFromEncodedURIComponent(
-                            urlParams.get("text"),
-                        );
-                    text.value = decodedText;
-                }
-                if (urlParams.get("regex" != null)) {
-                    const decodedRegex =
-                        globalThis.LZString.decompressFromEncodedURIComponent(
-                            urlParams.get("regex"),
-                        );
-                    regex.value = decodedRegex;
-                }
-            }
-
-            function decodeDimensionsFromUrl() {
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get("width") != null) {
-                    const width = parseInt(urlParams.get("width"), 10);
-                    if (!isNaN(width)) {
-                        text.style.width = width + "px";
-                    }
-                }
-                if (urlParams.get("height") != null) {
-                    const height = parseInt(urlParams.get("height"), 10);
-                    if (!isNaN(height)) {
-                        text.style.height = height + "px";
-                    }
-                }
-            }
-
-            function encodeDimensionsAndAddToUrl() {
-                const width = text.offsetWidth.toString();
-                const height = text.offsetHeight.toString();
-                const currentParams = new URLSearchParams(
-                    window.location.search,
-                );
-                currentParams.set("width", width);
-                currentParams.set("height", height);
-                window.history.replaceState(
-                    null,
-                    null,
-                    "issue_extractor.html?" + currentParams.toString(),
-                );
-            }
-
-            function encodeTextAndRegexAndAddToUrl() {
-                const encodedText =
-                    globalThis.LZString.compressToEncodedURIComponent(
-                        text.value,
-                    );
-                const encodedRegex =
-                    globalThis.LZString.compressToEncodedURIComponent(
-                        regex.value,
-                    );
-                const currentParams = new URLSearchParams(
-                    window.location.search,
-                );
-                currentParams.set("text", encodedText);
-                currentParams.set("regex", encodedRegex);
-                window.history.replaceState(
-                    null,
-                    null,
-                    "issue_extractor.html?" + currentParams.toString(),
-                );
-                handleUriLength();
-            }
-
-            function handleUriLength() {
-                document.getElementById("uriLimit").innerText =
-                    Math.round(
-                        (window.location.href.length /
-                            GITHUB_PAGES_URI_MAX_LENGTH) *
-                            100,
-                    ) + "%";
-                if (window.location.href.length > GITHUB_PAGES_URI_MAX_LENGTH) {
-                    const currentParams = new URLSearchParams(
-                        window.location.search,
-                    );
-                    document.getElementById("uriDisclaimer").style.display =
-                        "block";
-                    currentParams.delete("text");
-                    currentParams.delete("regex");
-                    window.history.replaceState(
-                        null,
-                        null,
-                        "issue_extractor.html?" + currentParams.toString(),
-                    );
-                } else {
-                    document.getElementById("uriDisclaimer").style.display =
-                        "none";
-                }
-            }
-
-            function refresh() {
-                findIssues();
-                updateIssues();
-                updateNumber();
-                jqlToResults();
-                encodeTextAndRegexAndAddToUrl();
-            }
-
-            for (const element of [regex, text]) {
-                element.addEventListener("input", () => {
-                    refresh();
-                });
-            }
-
-            text.addEventListener("mouseup", () => {
-                encodeDimensionsAndAddToUrl();
-            });
-
-            document.addEventListener("DOMContentLoaded", () => {
-                exampleText = `V načrtu bomo naredili več stvari.
-
-V prvem delu bomo implementirali zaledje (IX-503940) in UI, ta je že napol narejen v IX-123456.
-
-Potem pa bomo to še testirali v IX-333333 `;
-                text.value = exampleText;
-
-                decodeTextAndRegexFromUrl();
-                decodeDimensionsFromUrl();
-                refresh();
-            });
-        </script>
     </body>
 </html>
