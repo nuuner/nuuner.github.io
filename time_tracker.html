@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Time Tracker</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="compress.min.js"></script>
+    <script src="time_tracker.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+    <style>
+        button {
+            background-color: #03cea4;
+            border: none;
+            border-radius: 5px;
+            padding: 5px;
+            color: #2a2b3d;
+            font-weight: bold;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        button.grey {
+            background-color: #2a2b3d;
+            color: #a0a0a0;
+        }
+
+        hr {
+            border: none;
+            border-bottom: solid #2a2b3d 1px;
+        }
+
+        input {
+            background-color: #2a2b3d;
+            border: none;
+            border-radius: 5px;
+            padding: 5px;
+            color: white;
+            font-weight: bold;
+            margin: 5px;
+        }
+
+        .grey {
+            color: #a0a0a0;
+        }
+
+        body {
+            background-color: #1d1e2c;
+            color: white;
+        }
+
+        a {
+            color: #a0a0a0;
+        }
+
+        a::visited {
+            color: #a0a0a0;
+        }
+    </style>
+</head>
+
+<body>
+    <div x-data="{
+        project: '',
+        id: 0,
+        currentId: null,
+        tracked: [],
+        total: 0,
+        }" x-init="
+        setInterval(() => {
+            if (tracked.length > 0 && tracked[0].id == currentId) {
+                tracked[0].end = new Date();
+            }
+            total = tracked.reduce((acc, trackedProject) => {
+                if (trackedProject.end) {
+                    return acc + (trackedProject.end - trackedProject.start);
+                }
+                return acc;
+            }, 0);
+        }, 1000);
+        ">
+        <div>
+            <input type="text" x-model:value="project" placeholder="Project name..." />
+            <button x-on:click="
+            tracked.unshift({
+                id: id,
+                name: project,
+                start: new Date(),
+                end: new Date(),
+                comment: 'Worked on ' + project
+            });
+            currentId = id;
+            id++
+            ">
+                Start tracking project
+            </button>
+            <span style="float: right">
+                <span class="grey">Total: </span>
+                <span x-text="getDurationStringFromMilliseconds(total)"></span>
+            </span>
+        </div>
+        <hr />
+        <div>
+            <template x-for="(trackedProject, index) in tracked" :key="trackedProject.id">
+                <div style="border-radius: 5px; padding: 10px; margin: 5px; background-color: #2a2b3d;"
+                    :style="{border: (currentId == trackedProject.id ? 'solid #03cea4 2px' : '')}">
+                    <div>
+                        <span x-show="currentId == trackedProject.id" style="color: #03cea4">
+                            <span>Currently tracking...</span>
+                            <button x-on:click="currentId = null">
+                                Stop tracking
+                            </button>
+                        </span>
+                        <span x-show="index == 0 && currentId != trackedProject.id">
+                            <button x-on:click="currentId = trackedProject.id">
+                                Continue tracking
+                                <strong>without</strong> break
+                            </button>
+                            <button x-on:click="
+                                        tracked.unshift({
+                                            id: id,
+                                            name: trackedProject.name,
+                                            start: new Date(),
+                                            end: new Date(),
+                                            comment: trackedProject.comment
+                                        });
+                                        currentId = id;
+                                        id++
+                                        ">
+                                Continue tracking
+                                <strong>with</strong> break
+                            </button>
+                        </span>
+                        <span x-show="index != 0 && currentId != trackedProject.id">
+                            <button x-on:click="
+                                        tracked.unshift({
+                                            id: id,
+                                            name: trackedProject.name,
+                                            start: new Date(),
+                                            end: new Date(),
+                                            comment: trackedProject.comment
+                                        });
+                                        currentId = id;
+                                        id++
+                            ">
+                                Continue tracking
+                            </button>
+                        </span>
+                        <span x-show="currentId != trackedProject.id" style="float: right;" x-data="{confirm: false}">
+                            <button x-show="confirm == false" x-on:click="confirm = true">
+                                Delete
+                            </button>
+                            <span x-show="confirm == true">
+                                <button x-on:click="
+                                            tracked.splice(index, 1);
+                                            confirm = false;
+                                        ">
+                                    Confirm
+                                </button>
+                                <button x-on:click="confirm = false">
+                                    Cancel
+                                </button>
+                            </span>
+                    </div>
+                    <div x-text="trackedProject.name" style="font-weight: bold; font-size: 24px"></div>
+                    <div style="display: flex; flex-direction: row">
+                        <div style="
+                                    flex-shrink: 0;
+                                    padding-right: 10px;
+                                    border-right: solid white 1px;
+                                ">
+                            <template x-if="trackedProject.end">
+                                <div>
+                                    <div>
+                                        <span class="grey">End: </span>
+                                        <span x-text="trackedProject.end.toTimeString().substring(0,8)"></span>
+                                    </div>
+                                    <div style="
+                                                border-left: solid white 1px;
+                                                padding-left: 10px;
+                                            " x-text="getDurationString(trackedProject.start, trackedProject.end)">
+                                    </div>
+                                </div>
+                            </template>
+                            <div>
+                                <span class="grey">Start: </span>
+                                <span x-text="trackedProject.start.toTimeString().substring(0,8)"></span>
+                            </div>
+                        </div>
+                        <div style="margin-left: 10px; flex-grow: 1" contenteditable="true"
+                            x-init="$el.innerText = trackedProject.comment"
+                            x-on:input="trackedProject.comment = $event.target.innerText"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <button class="grey" x-on:click="console.log(tracked)" style="float: right">
+            Print data to console
+        </button>
+    </div>
+</body>
+
+</html>
