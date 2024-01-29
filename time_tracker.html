@@ -79,7 +79,7 @@
                 return acc;
             }, 0);
         }, 1000);
-        ">
+        " style="padding: 10px;">
         <div>
             <input type="text" x-model:value="project" placeholder="Project name..." />
             <button x-on:click="
@@ -95,9 +95,9 @@
             ">
                 Start tracking project
             </button>
-            <span style="float: right">
-                <span class="grey">Total: </span>
-                <span x-text="getDurationStringFromMilliseconds(total)"></span>
+            <span style="float: right; text-align: center;">
+                <div style="font-size: small;" class="grey">TOTAL</div>
+                <div x-text="getDurationStringFromMilliseconds(total)"></div>
             </span>
         </div>
         <hr />
