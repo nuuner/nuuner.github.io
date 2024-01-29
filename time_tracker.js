@@ -6,7 +6,7 @@ function getDurationStringFromMilliseconds(duration) {
     return "0m";
   }
   if (minutes < 1) {
-    return "less than 1 minute";
+    return "<1m";
   }
   if (minutes < 60) {
     return `${minutes}m`;
