@@ -225,11 +225,14 @@
             }
             return true;
         },
+        getDateTruncatedToSeconds(date) {
+            return new Date(date.getTime() - (date.getTime() % 1000));
+        }
         }" x-init="
         setInterval(() => {
             if (tracked.length > 0 && tracked[0].id == currentId) {
                 const currentDate = new Date();
-                tracked[0].end = new Date(currentDate.getTime() - (currentDate.getTime() % 1000));
+                tracked[0].end = getDateTruncatedToSeconds(currentDate);
             }
             total = tracked.reduce((acc, trackedProject) => {
                 if (trackedProject.end) {
@@ -285,7 +288,7 @@
                                         tracked.unshift({
                                             id: id,
                                             name: trackedProject.name,
-                                            start: new Date(),
+                                            start: getDateTruncatedToSeconds(new Date()),
                                             end: new Date(),
                                             comment: trackedProject.comment
                                         });
@@ -301,7 +304,7 @@
                                         tracked.unshift({
                                             id: id,
                                             name: trackedProject.name,
-                                            start: new Date(),
+                                            start: getDateTruncatedToSeconds(new Date()),
                                             end: new Date(),
                                             comment: trackedProject.comment
                                         });
