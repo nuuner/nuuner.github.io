@@ -66,6 +66,10 @@
             transition-timing-function: ease-in-out;
         }
 
+        .highlightText {
+            animation: green-text-highlight 2s 1;
+        }
+
         @keyframes fadein {
             from {
                 opacity: 0;
@@ -75,11 +79,68 @@
                 opacity: 1;
             }
         }
+
+        @keyframes green-text-highlight {
+            0% {
+                color: white;
+            }
+
+            25% {
+                color: #03cea4;
+            }
+
+            75% {
+                color: #03cea4;
+            }
+
+            100% {
+                color: white;
+            }
+        }
+
+        .warningPopup {
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: warningPopupFadeIn 0.5s;
+            background-color: #2a2b3d;
+            color: #03cea4;
+            border: solid #03cea4 2px;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+
+        @keyframes warningPopupFadeIn {
+            from {
+                top: transformY(-100%);
+                opacity: 0;
+            }
+
+            to {
+                top: transformY(0);
+                opacity: 1;
+            }
+        }
+
+        .warning-popup-fade-out {
+            animation: warningPopupFadeOut 0.5s;
+            opacity: 0;
+        }
+
+        @keyframes warningPopupFadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
-<body>
-    <div x-data="{
+<body x-data="{
         project: '',
         id: 0,
         currentId: null,
@@ -95,10 +156,80 @@
                     });
                 }, 300);
             },
+        highlightText: function (selectorString) {
+            const element = document.querySelector(selectorString);
+            element.classList.add('highlightText');
+            setTimeout(() => {
+                element.classList.remove('highlightText');
+            }, 2000);
+        },
+        throwWarningPopupBelowOfElement: function (selectorString, text) {
+            const element = document.querySelector(selectorString);
+            const warningPopup = document.createElement('div');
+            warningPopup.classList.add('warningPopup');
+            warningPopup.style.top = element.offsetTop + element.offsetHeight + 'px';
+            warningPopup.style.left = element.offsetLeft + 'px';
+            warningPopup.innerText = text;
+            document.body.appendChild(warningPopup);
+            setTimeout(() => {
+                warningPopup.classList.add('warning-popup-fade-out');
+                setTimeout(() => {
+                    warningPopup.remove();
+                }, 500);
+            }, 3000);
+        }
+    }" style="padding: 10px;">
+    <div x-data="{
+        mergeProjects(olderProject, newerProject) {
+            newerProject.start = olderProject.start;
+            highlightText('#trackedProject-' + newerProject.id + ' .start');
+            if (newerProject.comment != olderProject.comment) {
+                newerProject.comment = newerProject.comment + '\n\n' + olderProject.comment;
+                document.getElementById('trackedProject-' + newerProject.id).querySelector('.comment').innerText = newerProject.comment;
+                highlightText('#trackedProject-' + newerProject.id + ' .comment');
+            }
+            deleteTrackedProject(olderProject);
+            },
+        isValidTimestamp(timeString) {
+            return /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/.test(timeString);
+        },
+        checkIfEndDateIsValid(trackedProject, index, newEndDate) {
+            if (newEndDate < trackedProject.start) {
+                throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .end', 'End time cannot be before start time');
+                return false;
+            }
+            if (newEndDate > new Date()) {
+                throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .end', 'End time cannot be in the future');
+                return false;
+            }
+            if (index != 0) {
+                const newerProject = this.tracked[index - 1];
+                if (newEndDate > newerProject.start) {
+                    throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .end', 'New end time cannot be after start time of a newer project');
+                    return false;
+                }
+            }
+            return true;
+        },
+        checkIfStartDateIsValid(trackedProject, index, newStartDate) {
+            if (newStartDate > new Date()) {
+                throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .start', 'Start time cannot be in the future');
+                return false;
+            }
+            if (index != this.tracked.length - 1) {
+                const olderProject = this.tracked[index + 1];
+                if (newStartDate < olderProject.end) {
+                    throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .start', 'New start time cannot be before end time of an older project');
+                    return false;
+                }
+            }
+            return true;
+        },
         }" x-init="
         setInterval(() => {
             if (tracked.length > 0 && tracked[0].id == currentId) {
-                tracked[0].end = new Date();
+                const currentDate = new Date();
+                tracked[0].end = new Date(currentDate.getTime() - (currentDate.getTime() % 1000));
             }
             total = tracked.reduce((acc, trackedProject) => {
                 if (trackedProject.end) {
@@ -134,22 +265,23 @@
         <hr />
         <div>
             <template x-for="(trackedProject, index) in tracked" :key="trackedProject.id">
-                <div class="trackedProject" x-bind:id="'trackedProject-' + trackedProject.id"
-                    style="border-radius: 5px; padding: 10px; margin: 5px; background-color: #2a2b3d;"
-                    :style="{border: (currentId == trackedProject.id ? 'solid #03cea4 2px' : '')}">
-                    <div>
-                        <span x-show="currentId == trackedProject.id">
-                            <button x-on:click="currentId = null">
-                                <i class="bi bi-stop-fill"></i>
-                                <span>Stop tracking</span>
-                            </button>
-                        </span>
-                        <span x-show="index == 0 && currentId != trackedProject.id">
-                            <button x-on:click="currentId = trackedProject.id">
-                                Continue tracking
-                                <strong>without</strong> break
-                            </button>
-                            <button x-on:click="
+                <div>
+                    <div class="trackedProject" x-bind:id="'trackedProject-' + trackedProject.id"
+                        style="border-radius: 5px; padding: 10px; margin: 5px; background-color: #2a2b3d;"
+                        :style="{border: (currentId == trackedProject.id ? 'solid #03cea4 2px' : '')}">
+                        <div>
+                            <span x-show="currentId == trackedProject.id">
+                                <button x-on:click="currentId = null">
+                                    <i class="bi bi-stop-fill"></i>
+                                    <span>Stop tracking</span>
+                                </button>
+                            </span>
+                            <span x-show="index == 0 && currentId != trackedProject.id">
+                                <button x-on:click="currentId = trackedProject.id">
+                                    Continue tracking
+                                    <strong>without</strong> break
+                                </button>
+                                <button x-on:click="
                                         tracked.unshift({
                                             id: id,
                                             name: trackedProject.name,
@@ -160,12 +292,12 @@
                                         currentId = id;
                                         id++
                                         ">
-                                Continue tracking
-                                <strong>with</strong> break
-                            </button>
-                        </span>
-                        <span x-show="index != 0 && currentId != trackedProject.id">
-                            <button x-on:click="
+                                    Continue tracking
+                                    <strong>with</strong> break
+                                </button>
+                            </span>
+                            <span x-show="index != 0 && currentId != trackedProject.id">
+                                <button x-on:click="
                                         tracked.unshift({
                                             id: id,
                                             name: trackedProject.name,
@@ -176,58 +308,139 @@
                                         currentId = id;
                                         id++
                             ">
-                                Continue tracking
-                            </button>
-                        </span>
-                        <span x-show="currentId != trackedProject.id" style="float: right;" x-data="{confirm: false}">
-                            <button x-show="confirm == false" x-on:click="confirm = true">
-                                <i class="bi bi-trash-fill"></i>
-                                <span>Delete</span>
-                            </button>
-                            <span x-show="confirm == true">
-                                <button class="grey" x-on:click="confirm = false">
-                                    Cancel
+                                    Continue tracking
                                 </button>
-                                <button x-on:click="
+                            </span>
+                            <span x-show="currentId != trackedProject.id" style="float: right;"
+                                x-data="{confirm: false}">
+                                <button x-show="confirm == false" x-on:click="confirm = true">
+                                    <i class="bi bi-trash-fill"></i>
+                                    <span>Delete</span>
+                                </button>
+                                <span x-show="confirm == true">
+                                    <button class="grey" x-on:click="confirm = false">
+                                        Cancel
+                                    </button>
+                                    <button x-on:click="
                                             deleteTrackedProject(trackedProject);
                                             confirm = false;
                                         ">
-                                    Confirm
-                                </button>
-                            </span>
-                    </div>
-                    <div contenteditable="true" x-init="$el.innerText = trackedProject.name"
-                        x-on:input="trackedProject.name = $event.target.innerText"
-                        style="font-weight: bold; font-size: 24px"></div>
-                    <div style="display: flex; flex-direction: row">
-                        <div style="
+                                        Confirm
+                                    </button>
+                                </span>
+                        </div>
+                        <div contenteditable="true" x-init="$el.innerText = trackedProject.name"
+                            x-on:input="trackedProject.name = $event.target.innerText"
+                            style="font-weight: bold; font-size: 24px"></div>
+                        <div style="display: flex; flex-direction: row">
+                            <div style="
                                     flex-shrink: 0;
                                     padding-right: 10px;
                                     border-right: solid white 1px;
                                 ">
-                            <template x-if="trackedProject.end">
-                                <div>
+                                <template x-if="trackedProject.end">
                                     <div>
-                                        <span x-text="trackedProject.end.toTimeString().substring(0,8)"></span>
-                                        <span style="display: inline-block; width: 50px;" class="grey">END</span>
-                                    </div>
-                                    <div style="
+                                        <div>
+                                            <span class="end" contenteditable="true"
+                                                x-init="$el.innerText = trackedProject.end.toTimeString().substring(0,8)"
+                                                x-on:blur="
+                                                    if (!isValidTimestamp($event.target.innerText)) {
+                                                        $event.target.innerText = trackedProject.end.toTimeString().substring(0,8)
+                                                        throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .end', 'Invalid time format');
+                                                    } else {
+                                                        const newEndDate = new Date(trackedProject.end.toDateString() + ' ' + $event.target.innerText);
+                                                        if (checkIfEndDateIsValid(trackedProject, index, newEndDate)) {
+                                                            trackedProject.end = newEndDate;
+                                                        } else {
+                                                            $event.target.innerText = trackedProject.end.toTimeString().substring(0,8);
+                                                        }
+                                                    }
+                                                " x-on:click="
+                                                    if (trackedProject.id == currentId) {
+                                                        throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .end', 'End time cannot be changed while tracking');
+                                                        $event.target.blur();
+                                                    }
+                                                " :style="trackedProject.id == currentId && 'color: #03cea4;'"
+                                                x-text="trackedProject.end.toTimeString().substring(0,8)"></span>
+                                            <span style="display: inline-block; width: 50px;" class="grey">END</span>
+                                        </div>
+                                        <div style="
                                                 border-left: solid white 1px;
                                                 padding-left: 10px;
                                             " x-text="getDurationString(trackedProject.start, trackedProject.end)">
+                                        </div>
                                     </div>
+                                </template>
+                                <div>
+                                    <span class="start" contenteditable="true"
+                                        x-init="$el.innerText = trackedProject.start.toTimeString().substring(0,8)"
+                                        x-on:blur="
+                                            if (!isValidTimestamp($event.target.innerText)) {
+                                                $event.target.innerText = trackedProject.start.toTimeString().substring(0,8)
+                                                throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .start', 'Invalid time format');
+                                            } else {
+                                                const newStartDate = new Date(trackedProject.start.toDateString() + ' ' + $event.target.innerText);
+                                                if (checkIfStartDateIsValid(trackedProject, index, newStartDate)) {
+                                                    trackedProject.start = newStartDate;
+                                                } else {
+                                                    $event.target.innerText = trackedProject.start.toTimeString().substring(0,8);
+                                                }
+                                            }
+                                        " x-text="trackedProject.start.toTimeString().substring(0,8)"></span>
+                                    <span style="display: inline-block; width: 50px;" class="grey">START</span>
                                 </div>
-                            </template>
+                            </div>
+                            <div class="comment" style="margin-left: 10px; flex-grow: 1" contenteditable="true"
+                                x-init="$el.innerText = trackedProject.comment"
+                                x-on:focus="if (trackedProject.comment == 'Worked on ' + trackedProject.name) {trackedProject.comment = ''; $el.innerText = trackedProject.comment}"
+                                x-on:blur="if (trackedProject.comment.trim() == '') { trackedProject.comment = 'Worked on ' + trackedProject.name; $el.innerText = trackedProject.comment}"
+                                x-on:input="trackedProject.comment = $event.target.innerText"></div>
+                        </div>
+                    </div>
+                    <template
+                        x-if="tracked[index + 1] != undefined && trackedProject.start - tracked[index + 1].end > 1000">
+                        <div x-data="{ breakOptions: false }" style="border-radius: 5px; padding: 10px; margin: 5px; ">
                             <div>
-                                <span x-text="trackedProject.start.toTimeString().substring(0,8)"></span>
-                                <span style="display: inline-block; width: 50px;" class="grey">START</span>
+                                <span x-text="getDurationString(tracked[index + 1].end, trackedProject.start)"></span>
+                                <span class="grey">BREAK</span>
+                                <button class="grey" x-on:click="
+                                    if (trackedProject.name == tracked[index + 1].name) {
+                                        mergeProjects(tracked[index + 1], trackedProject);
+                                    } else {
+                                        breakOptions = true
+                                    }
+                                    " x-show="breakOptions == false">
+                                    Remove break
+                                </button>
+                                <span x-show="breakOptions">
+                                    <button x-on:click="
+                                            let middle = new Date(tracked[index + 1].end.getTime() + (trackedProject.start - tracked[index + 1].end) / 2);
+                                            trackedProject.start = middle;
+                                            tracked[index + 1].end = middle;
+                                            highlightText('#trackedProject-' + trackedProject.id + ' .start');
+                                            highlightText('#trackedProject-' + tracked[index + 1].id + ' .end');
+                                        ">
+                                        <i class="bi bi-arrows-collapse"></i>
+                                    </button>
+                                    <button x-on:click="
+                                            trackedProject.start = tracked[index + 1].end; breakOptions = false;
+                                            highlightText('#trackedProject-' + trackedProject.id + ' .start');
+                                        ">
+                                        <i class="bi bi-arrow-bar-down"></i>
+                                    </button>
+                                    <button x-on:click="
+                                            tracked[index + 1].end = trackedProject.start; breakOptions = false;
+                                            highlightText('#trackedProject-' + tracked[index + 1].id + ' .end');
+                                        ">
+                                        <i class="bi bi-arrow-bar-up"></i>
+                                    </button>
+                                    <button class="grey" x-on:click="breakOptions = false">
+                                        Cancel
+                                    </button>
+                                </span>
                             </div>
                         </div>
-                        <div style="margin-left: 10px; flex-grow: 1" contenteditable="true"
-                            x-init="$el.innerText = trackedProject.comment"
-                            x-on:input="trackedProject.comment = $event.target.innerText"></div>
-                    </div>
-                </div>
+                    </template>
             </template>
         </div>
         <button class="grey" x-on:click="console.log(tracked)" style="float: right">
