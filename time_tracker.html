@@ -146,6 +146,7 @@
         currentId: null,
         tracked: [],
         total: 0,
+        date: new Date(),
         deleteTrackedProject: function (trackedProject) {
             const trackedProjectElement = document.getElementById('trackedProject-' + trackedProject.id);
             trackedProjectElement.style.transform = 'translateX(-100%)';
@@ -177,7 +178,16 @@
                     warningPopup.remove();
                 }, 500);
             }, 3000);
-        }
+        },
+        newDate(dateDate, timeDate) {
+            const dateDateObject = new Date(dateDate)
+            const timeDateObject = new Date(timeDate);
+            dateDateObject.setHours(timeDateObject.getHours());
+            dateDateObject.setMinutes(timeDateObject.getMinutes());
+            dateDateObject.setSeconds(timeDateObject.getSeconds());
+            dateDateObject.setMilliseconds(timeDateObject.getMilliseconds());
+            return dateDateObject;
+        },
     }" style="padding: 10px;">
     <div x-data="{
         mergeProjects(olderProject, newerProject) {
@@ -198,7 +208,7 @@
                 throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .end', 'End time cannot be before start time');
                 return false;
             }
-            if (newEndDate > new Date()) {
+            if (newEndDate > newDate(date, new Date())) {
                 throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .end', 'End time cannot be in the future');
                 return false;
             }
@@ -212,7 +222,7 @@
             return true;
         },
         checkIfStartDateIsValid(trackedProject, index, newStartDate) {
-            if (newStartDate > new Date()) {
+            if (newStartDate > newDate(date, new Date())) {
                 throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .start', 'Start time cannot be in the future');
                 return false;
             }
@@ -225,13 +235,28 @@
             }
             return true;
         },
-        getDateTruncatedToSeconds(date) {
-            return new Date(date.getTime() - (date.getTime() % 1000));
-        }
+        getDateTruncatedToSeconds(dateToTruncate) {
+            return new Date(dateToTruncate.getTime() - (dateToTruncate.getTime() % 1000));
+        },
+        updateTrackedProjects() {
+            if (!localStorage.getItem(formatDate(date))) {
+                tracked = [];
+            } else {
+                tracked = JSON.parse(localStorage.getItem(formatDate(date)));
+            }
+            currentId = null;
+            id = this.tracked.reduce((acc, trackedProject) => {
+                return Math.max(acc, trackedProject.id);
+            }, 0) + 1;
+            tracked.forEach((trackedProject) => {
+                trackedProject.end = newDate(date, trackedProject.end);
+                trackedProject.start = newDate(date, trackedProject.start);
+            });
+        },
         }" x-init="
         setInterval(() => {
             if (tracked.length > 0 && tracked[0].id == currentId) {
-                const currentDate = new Date();
+                const currentDate = newDate(date, new Date());
                 tracked[0].end = getDateTruncatedToSeconds(currentDate);
             }
             total = tracked.reduce((acc, trackedProject) => {
@@ -241,6 +266,24 @@
                 return acc;
             }, 0);
         }, 1000);
+
+        $watch('tracked', (tracked) => {
+            if (tracked.length > 0) {
+                localStorage.setItem(formatDate(date), JSON.stringify(tracked));
+            }
+        });
+
+        const trackedFromLocalStorage = JSON.parse(localStorage.getItem(formatDate()));
+        if (trackedFromLocalStorage) {
+            id = trackedFromLocalStorage.reduce((acc, trackedProject) => {
+                return Math.max(acc, trackedProject.id);
+            }, 0) + 1;
+            trackedFromLocalStorage.forEach((trackedProject) => {
+                trackedProject.start = newDate(date, trackedProject.start);
+                trackedProject.end = newDate(date, trackedProject.end);
+            });
+            tracked = trackedFromLocalStorage;
+        }
         " style="padding: 10px;">
         <div>
             <input type="text" x-model:value="project" placeholder="Project name..." />
@@ -248,16 +291,15 @@
             tracked.unshift({
                 id: id,
                 name: project,
-                start: new Date(),
-                end: new Date(),
+                start: newDate(date, new Date()),
+                end: newDate(date, new Date()),
                 comment: 'Worked on ' + project
             });
             currentId = id;
             id++
             ">
                 <i class="bi bi-play-fill"></i>
-                <span>
-                    Track project
+                <span x-text="formatDate(date) == formatDate() ? 'Start tracking' : 'Track project'">
                 </span>
             </button>
             <span style="float: right; text-align: center;">
@@ -288,8 +330,8 @@
                                         tracked.unshift({
                                             id: id,
                                             name: trackedProject.name,
-                                            start: getDateTruncatedToSeconds(new Date()),
-                                            end: new Date(),
+                                            start: getDateTruncatedToSeconds(newDate(date, new Date())),
+                                            end: newDate(date, new Date()),
                                             comment: trackedProject.comment
                                         });
                                         currentId = id;
@@ -304,8 +346,8 @@
                                         tracked.unshift({
                                             id: id,
                                             name: trackedProject.name,
-                                            start: getDateTruncatedToSeconds(new Date()),
-                                            end: new Date(),
+                                            start: getDateTruncatedToSeconds(newDate(date, new Date())),
+                                            end: newDate(date, new Date()),
                                             comment: trackedProject.comment
                                         });
                                         currentId = id;
@@ -351,7 +393,7 @@
                                                         $event.target.innerText = trackedProject.end.toTimeString().substring(0,8)
                                                         throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .end', 'Invalid time format');
                                                     } else {
-                                                        const newEndDate = new Date(trackedProject.end.toDateString() + ' ' + $event.target.innerText);
+                                                        const newEndDate = newDate(date, trackedProject.end.toDateString() + ' ' + $event.target.innerText);
                                                         if (checkIfEndDateIsValid(trackedProject, index, newEndDate)) {
                                                             trackedProject.end = newEndDate;
                                                         } else {
@@ -382,7 +424,7 @@
                                                 $event.target.innerText = trackedProject.start.toTimeString().substring(0,8)
                                                 throwWarningPopupBelowOfElement('#trackedProject-' + trackedProject.id + ' .start', 'Invalid time format');
                                             } else {
-                                                const newStartDate = new Date(trackedProject.start.toDateString() + ' ' + $event.target.innerText);
+                                                const newStartDate = newDate(date, trackedProject.start.toDateString() + ' ' + $event.target.innerText);
                                                 if (checkIfStartDateIsValid(trackedProject, index, newStartDate)) {
                                                     trackedProject.start = newStartDate;
                                                 } else {
@@ -417,7 +459,7 @@
                                 </button>
                                 <span x-show="breakOptions">
                                     <button x-on:click="
-                                            let middle = new Date(tracked[index + 1].end.getTime() + (trackedProject.start - tracked[index + 1].end) / 2);
+                                            let middle = newDate(date, tracked[index + 1].end.getTime() + (trackedProject.start - tracked[index + 1].end) / 2);
                                             trackedProject.start = middle;
                                             tracked[index + 1].end = middle;
                                             highlightText('#trackedProject-' + trackedProject.id + ' .start');
@@ -446,9 +488,15 @@
                     </template>
             </template>
         </div>
-        <button class="grey" x-on:click="console.log(tracked)" style="float: right">
-            Print data to console
-        </button>
+        <div>
+            <span>
+                <input type="date" :value="formatDate()" autocomplete="off"
+                    x-on:change="date = $event.target.valueAsDate; updateTrackedProjects()">
+            </span>
+            <button class="grey" x-on:click="console.log(tracked)" style="float: right">
+                Print data to console
+            </button>
+        </div>
     </div>
 </body>
 
