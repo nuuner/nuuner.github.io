@@ -188,8 +188,38 @@
             dateDateObject.setMilliseconds(timeDateObject.getMilliseconds());
             return dateDateObject;
         },
+        refreshTrackedProjectElement(id) {
+            $nextTick(() => {
+                const trackedProjectElement = document.getElementById('trackedProject-' + id);
+                const trackedProject = this.tracked.find((trackedProject) => {
+                    return trackedProject.id == id;
+                });
+
+                const commentElement = trackedProjectElement.querySelector('.comment');
+                const nameElement = trackedProjectElement.querySelector('.name');
+                const startElement = trackedProjectElement.querySelector('.start');
+                const endElement = trackedProjectElement.querySelector('.end');
+                const durationElement = trackedProjectElement.querySelector('.duration');
+
+                commentElement.innerText = trackedProject.comment;
+                nameElement.innerText = trackedProject.name;
+                startElement.innerText = trackedProject.start.toTimeString().substring(0,8);
+                endElement.innerText = trackedProject.end.toTimeString().substring(0,8);
+                durationElement.innerText = getDurationString(trackedProject.start, trackedProject.end);
+            });
+        },
     }" style="padding: 10px;">
     <div x-data="{
+        refreshAllBreaks() {
+            tracked.forEach((trackedProject, index) => {
+                if (index == tracked.length - 1) {
+                    return 0;
+                }
+                const olderTrackedProject = tracked[index + 1];
+                const breakTime = trackedProject.start.getTime() - olderTrackedProject.end.getTime();
+                trackedProject.break = breakTime;
+            });
+        },
         mergeProjects(olderProject, newerProject) {
             newerProject.start = olderProject.start;
             highlightText('#trackedProject-' + newerProject.id + ' .start');
@@ -253,8 +283,60 @@
                 trackedProject.start = newDate(date, trackedProject.start);
             });
         },
+        swapProjectUp(index) {
+            const newerProject = this.tracked[index - 1];
+            const olderProject = this.tracked[index];
+            const breakLength = newerProject.start - olderProject.end;
+            const newerProjectLength = newerProject.end - newerProject.start;
+            const olderProjectLength = olderProject.end - olderProject.start;
+
+            const newerProjectStart = newDate(date, olderProject.start)
+            const newerProjectEnd = newDate(date, newerProjectStart.getTime() + newerProjectLength);
+            const olderProjectStart = newDate(date, newerProjectEnd.getTime() + breakLength);
+            const olderProjectEnd = newDate(date, olderProjectStart.getTime() + olderProjectLength);
+
+            const newerProjectId = newerProject.id;
+            const newerProjectComment = newerProject.comment;
+            const newerProjectName = newerProject.name;
+
+            newerProject.start = olderProjectStart;
+            newerProject.end = olderProjectEnd;
+            newerProject.comment = olderProject.comment;
+            newerProject.name = olderProject.name;
+            newerProject.id = olderProject.id;
+
+            olderProject.start = newerProjectStart;
+            olderProject.end = newerProjectEnd;
+            olderProject.comment = newerProjectComment;
+            olderProject.name = newerProjectName;
+            olderProject.id = newerProjectId;
+
+            refreshTrackedProjectElement(newerProject.id)
+            refreshTrackedProjectElement(olderProject.id)
+
+            highlightText('#trackedProject-' + newerProject.id + ' .start');
+            highlightText('#trackedProject-' + newerProject.id + ' .end');
+            highlightText('#trackedProject-' + olderProject.id + ' .start');
+            highlightText('#trackedProject-' + olderProject.id + ' .end');
+        },
+        addTrackedProject(name, start, end, comment) {
+            const newTrackedProject = {
+                id: id,
+                name: name,
+                start: start ? start : newDate(date, new Date()),
+                end: end ? end : newDate(date, new Date()),
+                comment: comment ? comment : 'Worked on ' + name,
+                break: 0,
+            };
+            tracked.unshift(newTrackedProject);
+            return id++;
+        },
         }" x-init="
         setInterval(() => {
+            if (currentId != null && tracked[0].id != currentId) {
+                currentId = null;
+                return;
+            }
             if (tracked.length > 0 && tracked[0].id == currentId) {
                 const currentDate = newDate(date, new Date());
                 tracked[0].end = getDateTruncatedToSeconds(currentDate);
@@ -268,8 +350,11 @@
         }, 1000);
 
         $watch('tracked', (tracked) => {
+            refreshAllBreaks();
             if (tracked.length > 0) {
                 localStorage.setItem(formatDate(date), JSON.stringify(tracked));
+            } else {
+                localStorage.removeItem(formatDate(date));
             }
         });
 
@@ -284,19 +369,12 @@
             });
             tracked = trackedFromLocalStorage;
         }
+        refreshAllBreaks();
         " style="padding: 10px;">
         <div>
             <input type="text" x-model:value="project" placeholder="Project name..." />
             <button x-on:click="
-            tracked.unshift({
-                id: id,
-                name: project,
-                start: newDate(date, new Date()),
-                end: newDate(date, new Date()),
-                comment: 'Worked on ' + project
-            });
-            currentId = id;
-            id++
+            currentId = addTrackedProject(project);
             ">
                 <i class="bi bi-play-fill"></i>
                 <span x-text="formatDate(date) == formatDate() ? 'Start tracking' : 'Track project'">
@@ -327,15 +405,12 @@
                                     <strong>without</strong> break
                                 </button>
                                 <button x-on:click="
-                                        tracked.unshift({
-                                            id: id,
-                                            name: trackedProject.name,
-                                            start: getDateTruncatedToSeconds(newDate(date, new Date())),
-                                            end: newDate(date, new Date()),
-                                            comment: trackedProject.comment
-                                        });
-                                        currentId = id;
-                                        id++
+                                        currentId = addTrackedProject(
+                                            trackedProject.name,
+                                            getDateTruncatedToSeconds(newDate(date, new Date())),
+                                            newDate(date, new Date()),
+                                            trackedProject.comment
+                                        );
                                         ">
                                     Continue tracking
                                     <strong>with</strong> break
@@ -343,16 +418,13 @@
                             </span>
                             <span x-show="index != 0 && currentId != trackedProject.id">
                                 <button x-on:click="
-                                        tracked.unshift({
-                                            id: id,
-                                            name: trackedProject.name,
-                                            start: getDateTruncatedToSeconds(newDate(date, new Date())),
-                                            end: newDate(date, new Date()),
-                                            comment: trackedProject.comment
-                                        });
-                                        currentId = id;
-                                        id++
-                            ">
+                                    currentId = addTrackedProject(
+                                        trackedProject.name,
+                                        getDateTruncatedToSeconds(newDate(date, new Date())),
+                                        newDate(date, new Date()),
+                                        trackedProject.comment
+                                    );
+                                ">
                                     Continue tracking
                                 </button>
                             </span>
@@ -374,8 +446,8 @@
                                     </button>
                                 </span>
                         </div>
-                        <div contenteditable="true" x-init="$el.innerText = trackedProject.name"
-                            x-on:input="trackedProject.name = $event.target.innerText"
+                        <div class="name" contenteditable="true" x-init="$el.innerText = trackedProject.name"
+                            spellcheck="false" x-on:input="trackedProject.name = $event.target.innerText"
                             style="font-weight: bold; font-size: 24px"></div>
                         <div style="display: flex; flex-direction: row">
                             <div style="
@@ -396,6 +468,7 @@
                                                         const newEndDate = newDate(date, trackedProject.end.toDateString() + ' ' + $event.target.innerText);
                                                         if (checkIfEndDateIsValid(trackedProject, index, newEndDate)) {
                                                             trackedProject.end = newEndDate;
+                                                            refreshAllBreaks();
                                                         } else {
                                                             $event.target.innerText = trackedProject.end.toTimeString().substring(0,8);
                                                         }
@@ -409,7 +482,7 @@
                                                 x-text="trackedProject.end.toTimeString().substring(0,8)"></span>
                                             <span style="display: inline-block; width: 50px;" class="grey">END</span>
                                         </div>
-                                        <div style="
+                                        <div class="duration" style="
                                                 border-left: solid white 1px;
                                                 padding-left: 10px;
                                             " x-text="getDurationString(trackedProject.start, trackedProject.end)">
@@ -427,6 +500,7 @@
                                                 const newStartDate = newDate(date, trackedProject.start.toDateString() + ' ' + $event.target.innerText);
                                                 if (checkIfStartDateIsValid(trackedProject, index, newStartDate)) {
                                                     trackedProject.start = newStartDate;
+                                                    refreshAllBreaks();
                                                 } else {
                                                     $event.target.innerText = trackedProject.start.toTimeString().substring(0,8);
                                                 }
@@ -436,17 +510,26 @@
                                 </div>
                             </div>
                             <div class="comment" style="margin-left: 10px; flex-grow: 1" contenteditable="true"
-                                x-init="$el.innerText = trackedProject.comment"
+                                spellcheck="false" x-init="$el.innerText = trackedProject.comment"
                                 x-on:focus="if (trackedProject.comment == 'Worked on ' + trackedProject.name) {trackedProject.comment = ''; $el.innerText = trackedProject.comment}"
                                 x-on:blur="if (trackedProject.comment.trim() == '') { trackedProject.comment = 'Worked on ' + trackedProject.name; $el.innerText = trackedProject.comment}"
                                 x-on:input="trackedProject.comment = $event.target.innerText"></div>
+                            <div class="extra-buttons" style="flex-shrink: 0; margin-left: 10px;">
+                                <button x-show="index != 0" class="grey" x-on:click="swapProjectUp(index)">
+                                    <i class="bi bi-arrow-up"></i>
+                                </button>
+                                <br>
+                                <button x-show="index != tracked.length - 1" class="grey"
+                                    x-on:click="swapProjectUp(index + 1)">
+                                    <i class="bi bi-arrow-down"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <template
-                        x-if="tracked[index + 1] != undefined && trackedProject.start - tracked[index + 1].end > 1000">
+                    <div x-show="trackedProject.break && trackedProject.break > 1000">
                         <div x-data="{ breakOptions: false }" style="border-radius: 5px; padding: 10px; margin: 5px; ">
                             <div>
-                                <span x-text="getDurationString(tracked[index + 1].end, trackedProject.start)"></span>
+                                <span x-text="getDurationStringFromMilliseconds(trackedProject.break)"></span>
                                 <span class="grey">BREAK</span>
                                 <button class="grey" x-on:click="
                                     if (trackedProject.name == tracked[index + 1].name) {
@@ -464,18 +547,21 @@
                                             tracked[index + 1].end = middle;
                                             highlightText('#trackedProject-' + trackedProject.id + ' .start');
                                             highlightText('#trackedProject-' + tracked[index + 1].id + ' .end');
+                                            refreshAllBreaks();
                                         ">
                                         <i class="bi bi-arrows-collapse"></i>
                                     </button>
                                     <button x-on:click="
                                             trackedProject.start = tracked[index + 1].end; breakOptions = false;
                                             highlightText('#trackedProject-' + trackedProject.id + ' .start');
+                                            refreshAllBreaks();
                                         ">
                                         <i class="bi bi-arrow-bar-down"></i>
                                     </button>
                                     <button x-on:click="
                                             tracked[index + 1].end = trackedProject.start; breakOptions = false;
                                             highlightText('#trackedProject-' + tracked[index + 1].id + ' .end');
+                                            refreshAllBreaks();
                                         ">
                                         <i class="bi bi-arrow-bar-up"></i>
                                     </button>
@@ -485,7 +571,8 @@
                                 </span>
                             </div>
                         </div>
-                    </template>
+                    </div>
+                </div>
             </template>
         </div>
         <div>
