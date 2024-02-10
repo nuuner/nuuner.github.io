@@ -14,10 +14,9 @@
     }
 
     .section {
-      border: black solid 1px;
-      padding: 5px;
-      box-shadow: 3px 3px 0px black;
-      flex-basis: 100%; 
+        border: black solid 1px;
+        padding: 5px;
+        box-shadow: 3px 3px 0px black;
     }
 
     .habit {
@@ -65,6 +64,12 @@
 
     .section h1 {
       display: inline;
+    }
+
+    @media print {
+        .noprint {
+            visibility: hidden
+        }
     }
     </style>
   </head>
@@ -157,6 +162,11 @@
           <p>Set aside time for a deeper reflection on your past month's achievements and next steps.</p>
         </div>
       </div>
+    </div>
+    <div>
+      <span class="noprint" style="float: right; margin-top: 10px">
+        <a href="https://domeniglic.com">Author</a> | <a href="mailto:habits@iglic.com">Suggest changes</a>
+      </span>
     </div>
   </body>
 </html>
