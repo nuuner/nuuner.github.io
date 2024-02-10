@@ -1,92 +1,162 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Max Nuun</title>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="stylesheet" href="style.css" />
-    </head>
-    <body>
-        <strong style="float: right"
-            >⚠️ This page is a work in progress ⚠️</strong
-        ><br />
-        <h1 style="display: inline">Self-Maximize List</h1>
-        <img
-            style="margin-left: 20px"
-            width="200"
-            src="Header.png"
-            alt="0 to 100"
-        />
-        <p>This list applies mostly to people with a masculine core.</p>
-        <details>
-            <summary><b>Body</b></summary>
-            <details>
-                <summary>Body Type</summary>
-                TODO
-            </details>
-            <details>
-                <summary>Height</summary>
-                <h3>First Impressions</h3>
-                <p>
-                    Our monkey brain likes to percieve taller people as stronger
-                    and more confident. Similar to when two lobsters meet for
-                    the first time, we want to see where we stand on the totem
-                    pole before acting accordingly. Height is a simple and
-                    straightforward indicator that we use to see if we should
-                    start off our relationship from a docile or assertive
-                    standpoint. When stepping to a taller person, we practice
-                    caution, looking up at them, our subconscious mind is
-                    telling us that this bigger creature in front of us might
-                    have more <i>power</i>. We might need to tread carefully, so
-                    that power is not used against us. On the other hand,
-                    looking down at a shorter person, we physically stand over
-                    their position. We feel safe enough to be more assertive,
-                    maybe even trying to confirm our dominance over them.
-                </p>
-                <h3>Continued relationships</h3>
-                <p>
-                    Height loses its importance somewhat as we get to know a
-                    person. Their other qualities, that need more time to
-                    discover, come through. We might have realized that even if
-                    the person is shorter than us, they assume a leading role in
-                    the relationship/group via their other qualities like
-                    confidence and perseverance. Still, when a new taller person
-                    approaches, our monkey brain still engages the same thought:
-                    "This person seems taller than the person I know, is he also
-                    more X in this Y quality?"
-                </p>
-                <h3>⚡ Self-maximize?</h3>
-                <p>
-                    Stand tall, with your shoulders back. Because height is a
-                    part of the <b>size</b> bias, work on becoming more muscular
-                    and/or fit.
-                </p>
-                <p>
-                    If <b>shorter</b>, standing closer to a taller person will
-                    force you to tilt your head back more. This will emphasize
-                    your <i>shortness</i>. This can be used to great advantage
-                    when you want to inspire confidence in the other person.
-                </p>
-                <p>
-                    If <b>taller</b>, stand closer to a shorter person if you
-                    would like to be more assertive. Be careful not to cast a
-                    shadow on someone you don't want to overshadow.
-                </p>
-            </details>
-            <details><summary>Voice</summary></details>
-            <details><summary>Muscle</summary></details>
-            <details><summary>Hands</summary></details>
-            <details><summary>Fitness</summary></details>
-            <details><summary>Face</summary></details>
-            <details><summary>Chemistry</summary></details>
-            <details><summary>"Pheremones"</summary></details>
-            <details><summary>Hygene</summary></details>
-            <details><summary>Posture</summary></details>
-            <details><summary>Fashion</summary></details>
-        </details>
-        <details>
-            <summary><b>Personality</b></summary>
-        </details>
-        <div class="dark-mode-button">Dark Mode</div>
-    </body>
+  <head>
+    <title>Habit List</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="style.css" rel="stylesheet">
+    <style>
+    .container {
+      display: flex;
+      flex-wrap: nowrap; 
+      justify-content: space-between; 
+      gap: 10px;
+    }
+
+    .section {
+      border: black solid 1px;
+      padding: 5px;
+      box-shadow: 3px 3px 0px black;
+      flex-basis: 100%; 
+    }
+
+    .habit {
+      border-left: black solid 3px;
+      padding-left: 10px;
+      margin-bottom: 5px;
+    }
+
+    .tag {
+      border-radius: 16px;
+      padding: 0 5px;
+      margin: 0 2px;
+      color: grey;
+      border: grey solid 1px;
+      display: inline-block; 
+      float: right;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    h3 {
+      margin-bottom: 0;
+      display: inline;
+    }
+
+    h1 {
+      margin-left: 25px;
+    }
+
+    a {
+      color: grey;
+    }
+
+    a:visited {
+      color: grey;
+    }
+
+    @media (max-width: 900px) { 
+      .container {
+        flex-direction: column;
+      }
+    }
+
+    .section h1 {
+      display: inline;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="section" style="margin-bottom: 10px;">
+      <h1>Habits</h1>
+      <span class="version">0.1</span>
+    </div>
+    <div class="container">
+      <div class="section">
+        <h2>Daily</h2>
+        <div class="habit">
+          <h3>Read</h3>
+          <span class="tag">Social</span>
+          <span class="tag">Knowledge</span>
+          <span class="tag">Focus</span>
+          <p>Read at least <b>30 minutes</b> per day.</p>
+        </div>
+        <div class="habit">
+          <h3>Exercise</h3>
+          <span class="tag">Health</span>
+          <span class="tag">Vitality</span>
+          <p>Engage in at least <b>30 minutes</b> of physical activity.</p>
+        </div>
+        <div class="habit">
+          <h3>Journaling</h3>
+          <span class="tag">Reflection</span>
+          <span class="tag">Growth</span>
+          <p>Write down your thoughts and feelings for <b>10 minutes</b> to reflect on your day.</p>
+        </div>
+        <div class="habit">
+          <h3>Hydrate</h3>
+          <span class="tag">Health</span>
+          <span class="tag">Wellness</span>
+          <p>Drink at least <b>8 glasses</b> of water to stay hydrated.</p>
+        </div>
+        <div class="habit">
+          <h3>Meditation</h3>
+          <span class="tag">Mindfulness</span>
+          <span class="tag">Relaxation</span>
+          <span class="tag">Health</span>
+          <p>Spend at least <b>15 minutes</b> in meditation to improve mental clarity and reduce stress.</p>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Weekly</h2> 
+        <div class="habit">
+          <h3>Strength Training</h3>
+          <span class="tag">Physical Health</span>
+          <span class="tag">Strength</span>
+          <p>Train at least <b>3+</b> times per week to build muscle mass.</p>
+        </div>
+        <div class="habit">
+          <h3>Clean Environment</h3>
+          <span class="tag">Mental Wellness</span>
+          <span class="tag">Organization</span>
+          <p>Make sure to keep your surroundings clean to aid <a target="_blank" href="https://www.news-medical.net/health/Investigating-the-Link-between-Cleaning-and-Mental-Health.aspx">mental health</a>.</p>
+        </div>
+        <div class="habit">
+          <h3>Meal Prep</h3>
+          <span class="tag">Nutrition</span>
+          <span class="tag">Efficiency</span>
+          <p>Prepare your meals for the week to ensure healthy eating and save time.</p>
+        </div>
+        <div class="habit">
+          <h3>Digital Detox</h3>
+          <span class="tag">Mental Wellness</span>
+          <span class="tag">Rest</span>
+          <p>Spend a day without electronic devices to reduce stress and improve sleep quality.</p>
+        </div>
+      </div>
+      <div class="section">
+        <h2>Monthly</h2>
+        <div class="habit">
+          <h3>Financial Review</h3>
+          <span class="tag">Finance</span>
+          <span class="tag">Planning</span>
+          <p>Review and plan your budget and expenses for the next month.</p>
+        </div>
+        <div class="habit">
+          <h3>Deep Clean</h3>
+          <span class="tag">Cleaning</span>
+          <span class="tag">Organization</span>
+          <p>Perform a deep clean of your living space, focusing on areas not covered in regular cleaning.</p>
+        </div>
+        <div class="habit">
+          <h3>Self-Reflection</h3>
+          <span class="tag">Growth</span>
+          <span class="tag">Mindfulness</span>
+          <p>Set aside time for a deeper reflection on your past month's achievements and next steps.</p>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>
