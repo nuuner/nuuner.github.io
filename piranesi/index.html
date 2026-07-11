@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Atlas of the House &#183; Piranesi</title>
+<meta name="description" content="An interactive compass-grid map of the House from Susanna Clarke's Piranesi, reconstructed from the narrator's journals.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%9B%EF%B8%8F%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    /* type roles (theme-independent) */
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"URW Palladio L",P052,Georgia,"Times New Roman",serif;
+    --mono:"SFMono-Regular","SF Mono","JetBrains Mono","Roboto Mono",ui-monospace,Menlo,Consolas,monospace;
+    /* daylight marble (light) */
+    --ground:#e4e5e0; --ground-2:#edeee9; --panel:#f4f4f0;
+    --ink:#23282e; --ink-dim:#5c636b; --ink-faint:#8b929a;
+    --line:#c6c9c0; --line-soft:#d5d8cf;
+    --marble:#ffffff; --marble-stroke:#3a4048;
+    --patina:#2b7c6b; --patina-soft:#dcefe9;
+    --brass:#8a6a24; --brass-soft:#efe4c8;
+    --tide:#4d6f92; --tide-fill:rgba(77,111,146,.10);
+    --bone:#9a8452;
+    --flood:#b0563f; --flood-fill:rgba(176,86,63,.09);
+    --thread:#a13a52;
+    --shadow:0 1px 2px rgba(20,24,30,.12),0 8px 30px rgba(20,24,30,.10);
+    --card-shadow:0 12px 40px rgba(20,24,30,.16);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#111419; --ground-2:#161a20; --panel:#1b2028;
+      --ink:#d3d8de; --ink-dim:#8b939d; --ink-faint:#5f6874;
+      --line:#272d36; --line-soft:#20252d;
+      --marble:#e8e4da; --marble-stroke:#0d1013;
+      --patina:#63b7a4; --patina-soft:#16302b;
+      --brass:#cbaa6d; --brass-soft:#2a2415;
+      --tide:#4f7aa3; --tide-fill:rgba(50,86,122,.20);
+      --bone:#d6c8a6;
+      --flood:#c76a52; --flood-fill:rgba(150,70,52,.16);
+    --thread:#d78a9c;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 34px rgba(0,0,0,.45);
+      --card-shadow:0 16px 50px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#e4e5e0; --ground-2:#edeee9; --panel:#f4f4f0;
+    --ink:#23282e; --ink-dim:#5c636b; --ink-faint:#8b929a;
+    --line:#c6c9c0; --line-soft:#d5d8cf;
+    --marble:#ffffff; --marble-stroke:#3a4048;
+    --patina:#2b7c6b; --patina-soft:#dcefe9;
+    --brass:#8a6a24; --brass-soft:#efe4c8;
+    --tide:#4d6f92; --tide-fill:rgba(77,111,146,.10);
+    --bone:#9a8452;
+    --flood:#b0563f; --flood-fill:rgba(176,86,63,.09);
+    --thread:#a13a52;
+    --shadow:0 1px 2px rgba(20,24,30,.12),0 8px 30px rgba(20,24,30,.10);
+    --card-shadow:0 12px 40px rgba(20,24,30,.16);
+  }
+  :root[data-theme="dark"]{
+    --ground:#111419; --ground-2:#161a20; --panel:#1b2028;
+    --ink:#d3d8de; --ink-dim:#8b939d; --ink-faint:#5f6874;
+    --line:#272d36; --line-soft:#20252d;
+    --marble:#e8e4da; --marble-stroke:#0d1013;
+    --patina:#63b7a4; --patina-soft:#16302b;
+    --brass:#cbaa6d; --brass-soft:#2a2415;
+    --tide:#4f7aa3; --tide-fill:rgba(50,86,122,.20);
+    --bone:#d6c8a6;
+    --flood:#c76a52; --flood-fill:rgba(150,70,52,.16);
+    --thread:#d78a9c;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 34px rgba(0,0,0,.45);
+    --card-shadow:0 16px 50px rgba(0,0,0,.55);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--ground); color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,"URW Palladio L",P052,Georgia,serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    display:flex; flex-direction:column; min-height:100%;
+  }
+  .mono{font-family:"SFMono-Regular","SF Mono","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+
+  /* ============ MASTHEAD ============ */
+  header{
+    padding:22px clamp(16px,4vw,44px) 16px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,var(--ground-2),var(--ground));
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:18px 28px;
+  }
+  .title-block{flex:1 1 340px; min-width:0}
+  .eyebrow{
+    font-family:"SFMono-Regular","SF Mono",ui-monospace,Menlo,monospace;
+    font-size:10.5px; letter-spacing:.34em; text-transform:uppercase;
+    color:var(--patina); margin:0 0 8px;
+  }
+  h1{
+    font-size:clamp(26px,4.4vw,46px); line-height:1.02; margin:0;
+    font-weight:600; letter-spacing:.005em; text-wrap:balance;
+  }
+  h1 .of{font-style:italic; font-weight:400; color:var(--ink-dim)}
+  .dek{
+    margin:10px 0 0; max-width:64ch; color:var(--ink-dim);
+    font-size:clamp(13.5px,1.5vw,15.5px); line-height:1.5;
+  }
+  .dek em{color:var(--ink); font-style:italic}
+  .masthead-aside{
+    flex:0 0 auto; text-align:right; color:var(--ink-faint);
+    font-family:"SFMono-Regular","SF Mono",ui-monospace,Menlo,monospace;
+    font-size:11px; line-height:1.7; letter-spacing:.02em;
+  }
+  .masthead-aside b{color:var(--ink-dim); font-weight:600}
+  .theme-btn{
+    margin-top:8px; font-family:inherit; font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--ink-dim); background:transparent;
+    border:1px solid var(--line); border-radius:2px; padding:5px 10px; cursor:pointer;
+    transition:border-color .2s,color .2s;
+  }
+  .theme-btn:hover{border-color:var(--patina); color:var(--patina)}
+
+  /* ============ LAYOUT ============ */
+  main{flex:1 1 auto; display:grid; grid-template-columns:1fr minmax(280px,340px); min-height:0}
+  @media (max-width:820px){ main{grid-template-columns:1fr} }
+
+  .stage-wrap{position:relative; min-height:440px; overflow:hidden; border-right:1px solid var(--line)}
+  @media (max-width:820px){ .stage-wrap{border-right:0; border-bottom:1px solid var(--line); height:66vh} }
+  svg.stage{width:100%; height:100%; display:block; cursor:grab; touch-action:none; background:
+     radial-gradient(120% 90% at 30% 0%,var(--ground-2),var(--ground) 70%);}
+  svg.stage.grabbing{cursor:grabbing}
+
+  /* toolbar over the map */
+  .toolbar{
+    position:absolute; left:14px; top:14px; right:14px; display:flex; flex-wrap:wrap;
+    gap:7px; align-items:center; pointer-events:none;
+  }
+  .chip{
+    pointer-events:auto; cursor:pointer; user-select:none;
+    font-family:"SFMono-Regular","SF Mono",ui-monospace,Menlo,monospace;
+    font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    padding:5px 9px 5px 8px; border-radius:2px; border:1px solid var(--line);
+    background:color-mix(in srgb,var(--panel) 82%,transparent); color:var(--ink-dim);
+    backdrop-filter:blur(6px); display:inline-flex; align-items:center; gap:6px;
+    transition:color .18s,border-color .18s,background .18s;
+  }
+  .chip:hover{color:var(--ink); border-color:var(--ink-faint)}
+  .chip .dot{width:8px; height:8px; border-radius:50%; flex:0 0 auto; box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+  .chip[aria-pressed="false"]{opacity:.42; text-decoration:line-through}
+  .spacer{flex:1 1 auto}
+  .zoom{pointer-events:auto; display:inline-flex; border:1px solid var(--line); border-radius:2px; overflow:hidden;
+    background:color-mix(in srgb,var(--panel) 82%,transparent); backdrop-filter:blur(6px)}
+  .zoom button{
+    font-family:"SFMono-Regular","SF Mono",ui-monospace,monospace; font-size:14px; line-height:1;
+    width:30px; height:28px; border:0; background:transparent; color:var(--ink-dim); cursor:pointer;
+    border-left:1px solid var(--line);
+  }
+  .zoom button:first-child{border-left:0}
+  .zoom button:hover{color:var(--patina); background:color-mix(in srgb,var(--patina) 12%,transparent)}
+  .hint{
+    position:absolute; left:16px; bottom:12px; pointer-events:none;
+    font-family:"SFMono-Regular","SF Mono",ui-monospace,monospace; font-size:10.5px;
+    letter-spacing:.04em; color:var(--ink-faint);
+  }
+
+  /* search */
+  .search{pointer-events:auto; position:relative}
+  .search input{
+    font-family:"SFMono-Regular","SF Mono",ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.04em;
+    color:var(--ink); background:color-mix(in srgb,var(--panel) 82%,transparent);
+    border:1px solid var(--line); border-radius:2px; padding:6px 9px; width:180px;
+    backdrop-filter:blur(6px); outline:none; transition:border-color .18s;
+  }
+  .search input::placeholder{color:var(--ink-faint)}
+  .search input:focus{border-color:var(--patina)}
+  .search-results{
+    position:absolute; left:0; top:calc(100% + 5px); z-index:6; min-width:250px; max-width:310px;
+    max-height:264px; overflow-y:auto; background:var(--panel); border:1px solid var(--line);
+    border-radius:2px; box-shadow:var(--card-shadow);
+  }
+  .search-results:empty{display:none}
+  .sr{padding:7px 11px; cursor:pointer; border-top:1px solid var(--line-soft)}
+  .sr:first-child{border-top:0}
+  .sr .srn{font-size:13px; line-height:1.25; color:var(--ink)}
+  .sr .srt{font-family:"SFMono-Regular","SF Mono",ui-monospace,Menlo,monospace; font-size:10px; color:var(--ink-faint); letter-spacing:.05em; margin-top:2px}
+  .sr:hover,.sr.active{background:var(--patina-soft)}
+  .sr:hover .srn,.sr.active .srn{color:var(--patina)}
+
+  /* SVG element styling */
+  .grid-line{stroke:var(--line); stroke-width:1; fill:none; vector-effect:non-scaling-stroke}
+  .grid-axis{stroke:var(--line); stroke-width:1.4; fill:none; vector-effect:non-scaling-stroke}
+  .ring{stroke:var(--line-soft); stroke-width:1; fill:none; vector-effect:non-scaling-stroke; stroke-dasharray:2 5}
+  .ring-label{fill:var(--ink-faint); font-family:var(--mono); font-size:9.5px; letter-spacing:.08em}
+  .compass-label{fill:var(--ink-dim); font-family:var(--mono); font-size:12px; letter-spacing:.32em; text-anchor:middle}
+  .east-zone-label{fill:var(--tide); font-family:var(--mono); font-size:12px; letter-spacing:.34em; opacity:.85}
+  .tidewave{stroke:var(--tide); fill:none; vector-effect:non-scaling-stroke;
+    animation:tdrift 18s ease-in-out infinite alternate}
+  @keyframes tdrift{from{transform:translateX(-13px)}to{transform:translateX(13px)}}
+  .route{stroke:var(--brass); stroke-width:1.6; fill:none; stroke-dasharray:4 4; vector-effect:non-scaling-stroke; opacity:.75}
+  .flood-ring{fill:var(--flood-fill); stroke:var(--flood); stroke-width:1.2; stroke-dasharray:3 4; vector-effect:non-scaling-stroke}
+  .flood-label{fill:var(--flood); font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase}
+
+  /* the narrator's thread (journey across the novel) */
+  .thread{stroke:var(--thread); stroke-width:1.8; fill:none; opacity:.7; vector-effect:non-scaling-stroke;
+    stroke-linecap:round; stroke-linejoin:round}
+  .jstop{cursor:pointer}
+  .jstop circle{fill:var(--panel); stroke:var(--thread); stroke-width:1.1; vector-effect:non-scaling-stroke}
+  .jstop text{fill:var(--thread); font-family:var(--mono); font-size:8.5px; text-anchor:middle; pointer-events:none}
+  .jstop:hover circle{stroke-width:2}
+  .jstop.jcur circle{fill:var(--thread)}
+  .jstop.jcur text{fill:var(--panel)}
+  .jpanel{
+    position:absolute; right:14px; bottom:12px; display:flex; align-items:center; gap:2px;
+    border:1px solid var(--line); border-radius:2px;
+    background:color-mix(in srgb,var(--panel) 86%,transparent); backdrop-filter:blur(6px);
+    font-family:"SFMono-Regular","SF Mono",ui-monospace,Menlo,monospace;
+  }
+  .jpanel button{border:0; background:transparent; color:var(--ink-dim); width:30px; height:30px;
+    font-size:11px; cursor:pointer}
+  .jpanel button:hover{color:var(--thread)}
+  .jpanel .jlab{font-size:10.5px; letter-spacing:.05em; color:var(--ink-dim); padding:0 6px;
+    min-width:150px; text-align:center; white-space:nowrap}
+  .jpanel .jlab b{color:var(--thread); font-weight:600}
+
+  .node{cursor:pointer}
+  .node .glyph{stroke-width:1.3; vector-effect:non-scaling-stroke; transition:transform .12s}
+  .node .halo{fill:none; stroke:var(--patina); stroke-width:2; opacity:0; vector-effect:non-scaling-stroke}
+  .node text.tag{
+    font-family:var(--mono); font-size:9px; letter-spacing:.03em; fill:var(--ink-dim);
+    paint-order:stroke; stroke:var(--ground); stroke-width:2.4px; stroke-linejoin:round;
+    pointer-events:none; opacity:0; transition:opacity .15s;
+  }
+  .node.always text.tag,.node:hover text.tag,.node:focus text.tag{opacity:1}
+  svg.lbls .node text.tag{opacity:1}
+  .node:hover .halo,.node:focus .halo,.node.sel .halo{opacity:.9}
+  .node:focus{outline:none}
+  .node.sel text.tag{opacity:1; fill:var(--ink)}
+
+  /* ============ INDEX CARD (sidebar) ============ */
+  aside{background:var(--ground-2); display:flex; flex-direction:column; min-height:0; overflow-y:auto}
+  .card{padding:20px clamp(16px,2vw,22px) 8px}
+  .card .kicker{
+    font-family:var(--mono); font-size:10px; letter-spacing:.28em; text-transform:uppercase;
+    color:var(--patina); margin:0 0 12px; display:flex; align-items:center; gap:8px;
+  }
+  .card .kicker::after{content:""; flex:1; height:1px; background:var(--line)}
+  .card h2{font-size:23px; line-height:1.12; margin:0 0 4px; font-weight:600; text-wrap:balance}
+  .card .subtag{font-family:var(--mono); font-size:11px; color:var(--ink-dim); letter-spacing:.04em; margin-bottom:16px}
+  .meta{display:grid; grid-template-columns:auto 1fr; gap:7px 14px; margin:0 0 16px;
+    font-size:13px; line-height:1.35}
+  .meta dt{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-faint); padding-top:2px}
+  .meta dd{margin:0; color:var(--ink)}
+  .coord-chip{font-family:var(--mono); font-size:12px; color:var(--patina)}
+  .badge{display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    padding:2px 7px; border-radius:2px; border:1px solid currentColor; text-transform:uppercase}
+  .card p.desc{font-size:14.5px; line-height:1.55; color:var(--ink); margin:0 0 16px}
+  .quote{
+    border-left:2px solid var(--brass); padding:2px 0 2px 14px; margin:0 0 6px;
+    font-style:italic; font-size:13.5px; line-height:1.5; color:var(--ink-dim); text-wrap:pretty;
+  }
+  .quote cite{display:block; font-style:normal; font-family:var(--mono); font-size:10.5px;
+    letter-spacing:.04em; color:var(--ink-faint); margin-top:7px}
+  .card .pin-note{font-family:var(--mono); font-size:10px; letter-spacing:.05em;
+    color:var(--ink-faint); margin:12px 0 0}
+  .card .jnote{border-left:2px solid var(--thread); padding:2px 0 2px 14px; margin:0 0 16px;
+    font-size:13.5px; line-height:1.55; color:var(--ink)}
+  .card .jnote .jwhen{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--thread); margin-bottom:5px}
+  .card .morehead{font-family:var(--mono); font-size:10px; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--ink-faint); margin:18px 0 9px; display:flex; align-items:center; gap:8px}
+  .card .morehead::after{content:""; flex:1; height:1px; background:var(--line)}
+  .card ul.more{margin:0 0 16px; padding:0 0 0 17px; display:flex; flex-direction:column; gap:7px}
+  .card ul.more li{font-size:13px; line-height:1.5; color:var(--ink-dim)}
+  .card ul.more li::marker{color:var(--patina)}
+
+  /* cross-section */
+  .xsec{padding:6px clamp(16px,2vw,22px) 22px; margin-top:auto; border-top:1px solid var(--line)}
+  .xsec h3{font-family:var(--mono); font-size:10px; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--ink-faint); margin:16px 0 10px}
+  .levels{display:flex; flex-direction:column; gap:4px}
+  .lvl{display:grid; grid-template-columns:70px 1fr; align-items:center; gap:12px;
+    padding:9px 11px; border-radius:3px; border:1px solid var(--line); background:var(--panel);
+    transition:border-color .2s,background .2s}
+  .lvl .lname{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink)}
+  .lvl .ldesc{font-size:12px; color:var(--ink-dim); line-height:1.35}
+  .lvl.upper{background:linear-gradient(90deg,color-mix(in srgb,var(--panel) 100%,transparent),var(--panel))}
+  .lvl.active{border-color:var(--patina); background:var(--patina-soft)}
+  .lvl.active .lname{color:var(--patina)}
+  .lvl .swatch{font-size:15px}
+
+  footer{
+    padding:14px clamp(16px,4vw,44px); border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.03em; color:var(--ink-faint);
+    display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between; background:var(--ground-2)
+  }
+  footer a{color:var(--patina); text-decoration:none}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header>
+  <div class="title-block">
+    <p class="eyebrow">A Cartographic Reconstruction</p>
+    <h1>The Atlas <span class="of">of the</span> House</h1>
+    <p class="dek">The world of Susanna Clarke's <em>Piranesi</em>, reassembled from the narrator's journals. Every Hall is reckoned from the <strong>First Vestibule</strong> &#8212; the origin of his numbering &#8212; and plotted on the compass-grid his naming implies. <em>Drag to wander; scroll to zoom; touch any place to read its entry &#8212; or follow the crimson Thread to walk the whole novel.</em></p>
+  </div>
+  <div class="masthead-aside">
+    <div><b>7,678</b> halls counted</div>
+    <div>furthest: <b>960 W &#183; 890 N &#183; 768 S</b></div>
+    <div>three levels &#183; one grid</div>
+    <button class="theme-btn" id="themeBtn" type="button">Change light</button>
+  </div>
+</header>
+
+<main>
+  <div class="stage-wrap">
+    <div class="toolbar" id="toolbar">
+      <span class="search">
+        <input id="searchInput" type="search" placeholder="Search the Catalogue&#8230;" autocomplete="off" spellcheck="false" aria-label="Search places">
+        <div class="search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
+      </span>
+      <span class="chip" data-layer="names" aria-pressed="true"><span class="dot" style="background:var(--ink-dim)"></span>Names</span>
+      <span class="chip" data-layer="thread" aria-pressed="false"><span class="dot" style="background:var(--thread)"></span>The Thread</span>
+      <span class="chip" data-layer="vestibule" aria-pressed="true"><span class="dot" style="background:var(--patina)"></span>Vestibules</span>
+      <span class="chip" data-layer="statue" aria-pressed="true"><span class="dot" style="background:var(--brass)"></span>Statues</span>
+      <span class="chip" data-layer="dead" aria-pressed="true"><span class="dot" style="background:var(--bone)"></span>The Dead</span>
+      <span class="chip" data-layer="route" aria-pressed="true"><span class="dot" style="background:var(--brass)"></span>Routes</span>
+      <span class="chip" data-layer="flood" aria-pressed="true"><span class="dot" style="background:var(--flood)"></span>The Flood</span>
+      <span class="chip" data-layer="grid" aria-pressed="true"><span class="dot" style="background:var(--line)"></span>Grid</span>
+      <span class="spacer"></span>
+      <span class="zoom" role="group" aria-label="Zoom">
+        <button id="zoomOut" title="Zoom out" aria-label="Zoom out">&#8211;</button>
+        <button id="zoomReset" title="Recentre" aria-label="Recentre" style="font-size:11px;width:38px">&#9678;</button>
+        <button id="zoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+      </span>
+    </div>
+    <svg class="stage" id="stage" aria-label="Interactive map of the House. Drag to pan, scroll to zoom, select a place for details."></svg>
+    <div class="hint">First Vestibule = origin (0,0) &#183; 1 step &#8776; one Hall &#8776; 0.2 km &#183; click a place to pin its entry</div>
+    <div class="jpanel" id="jpanel">
+      <button id="jPrev" type="button" aria-label="Previous stop">&#9664;</button>
+      <span class="jlab" id="jLab"></span>
+      <button id="jNext" type="button" aria-label="Next stop">&#9654;</button>
+    </div>
+  </div>
+
+  <aside>
+    <div class="card" id="card" aria-live="polite"><!-- filled by JS --></div>
+    <div class="xsec">
+      <h3>The Three Levels &#8212; one floor-plan, stacked</h3>
+      <div class="levels" id="levels">
+        <div class="lvl upper" data-lvl="Upper"><span class="lname"><span class="swatch">&#9729;</span> Upper</span><span class="ldesc">Clouds, birds, rain. Statues loom from mist. Refuge above the floods; the Concealed Person rests here.</span></div>
+        <div class="lvl middle active" data-lvl="Middle"><span class="lname"><span class="swatch">&#9638;</span> Middle</span><span class="ldesc">Birds & men. The inhabited, statue-filled world you are mapping now.</span></div>
+        <div class="lvl lower" data-lvl="Lower"><span class="lname"><span class="swatch">&#8776;</span> Lower</span><span class="ldesc">The Tides. Ocean surging up the staircases; giant statues; the drowned freshwater lakes of the East.</span></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <span>Sourced entry-by-entry from the journals of Matthew Rose Sorensen ("Piranesi").</span>
+  <span>Coordinates are the narrator's idealised addresses &#8212; the true House is a warren.</span>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var SVGNS="http://www.w3.org/2000/svg";
+  var STEP=46;                 // px per hall
+  var svg=document.getElementById("stage");
+
+  /* ---- DATA: every plotted place. x=East, y=North (halls from First Vestibule) ---- */
+  // cat: hub|vestibule|hall|statue|dead|home|meeting|threshold|far   lvl: Upper|Middle|Lower
+  var P=[
+    {id:"v1",name:"The First Vestibule",tag:"V\u00b7I",x:0,y:0,cat:"hub",lvl:"Middle",always:1,
+     desc:"The origin of the whole numbering system and the hub of everything: eight nine-metre Minotaurs, the Great Staircase down to the Lower Halls, and \u2014 in its South-Eastern corner \u2014 the shimmering threshold to our world.",
+     q:"I chose this Vestibule as the starting point, the place from which everything else is reckoned.",d:"1st day, 7th Month"},
+    {id:"threshold",name:"The Threshold to the Other World",tag:"\u2192 ours",x:0.9,y:-0.9,cat:"threshold",lvl:"Middle",always:1,
+     desc:"Between two Minotaurs in the South-Eastern corner of the First Vestibule the shadows shimmer into a corridor \u2014 traffic-sound, a smell of rain and petrol, blown crisp-packets. The one crossing to Battersea, London. Raphael calls it 'the minotaur room.'",
+     q:"We walked towards the two Minotaurs in the South-Eastern Corner. The shadows between them shimmered.",d:"1st day, 10th Month"},
+
+    // Northern (home axis)
+    {id:"1n",name:"First Northern Hall",tag:"1\u00b7N",x:0,y:1,cat:"hall",lvl:"Middle",desc:"Crows roost on its High Statues. On the path from home to the hub. Statues of an Old Man with a model ship (right) and a Winged Horse & Colt (left).",q:"the crows in the First Northern Hall when they flew down from the High Statues.",d:"16th day, 6th Month"},
+    {id:"2n",name:"Second Northern Hall",tag:"2\u00b7N",x:0,y:2,cat:"statue",lvl:"Middle",desc:"Behind the Statue of an Angel caught on a Rose Bush (NE corner, ~5 m up) the narrator hides his messenger bag \u2014 every Journal and the Index.",q:"behind the Statue of an Angel caught on a Rose Bush in the North-Eastern Corner of the Second Northern Hall.",d:"17th day, 5th Month"},
+    {id:"3n",name:"Third Northern Hall",tag:"\u2605 home",x:0,y:3,cat:"home",lvl:"Middle",always:1,desc:"HOME. The narrator's bed, the 'Thousand Statues,' where he sleeps, eats, and returns between every journey.",q:"When the Moon rose in the Third Northern Hall I went to the Ninth Vestibule.",d:"1st day, 5th Month"},
+    {id:"5n",name:"Fifth Northern Hall",tag:"5\u00b7N",x:0,y:5,cat:"statue",lvl:"Middle",desc:"The Statue of the Gorilla \u2014 Peace, Tranquillity, Strength, Endurance. A courage-landmark the narrator sits opposite to read.",q:"The Statue of a Gorilla that stands in the Fifth Northern Hall always catches my eye.",d:"18th day, 5th Month"},
+
+    // Southern
+    {id:"2s",name:"Second Southern Hall",tag:"2\u00b7S",x:0,y:-2,cat:"hall",lvl:"Middle",desc:"Floods ankle-deep for an hour at certain tides. The hall that proves the grid: it lies exactly two halls east of the Second South-Western Hall.",q:"The Second Southern Hall \u2013 two Halls east of here \u2013 will be flooded for an hour.",d:"29th day, 5th Month"},
+    {id:"10s",name:"Tenth Southern Hall",tag:"10\u00b7S",x:0,y:-10,cat:"hall",lvl:"Middle",desc:"The junction from which the narrator detours to the Fourteenth South-Western Hall while leading Raphael south.",q:"In the Tenth Southern Hall I made a detour to the Fourteenth South-Western Hall.",d:"29th day, 9th Month"},
+    {id:"19s",name:"Nineteenth Southern Hall",tag:"19\u00b7S",x:0,y:-19,cat:"statue",lvl:"Middle",desc:"The Statue of a Hierophant, of noble upright posture.",q:"the Statue of a Hierophant in the Nineteenth Southern Hall.",d:"15th day, 6th Month"},
+
+    // Eastern (derelict / drowned)
+    {id:"1e",name:"First Eastern Hall",tag:"1\u00b7E",x:1,y:0,cat:"hall",lvl:"Middle",desc:"A pale owl glides from here into the First Vestibule. The Eastern doorway onto the derelict, drowned quarter.",q:"A pale owl glided out of the First Eastern Hall into the First Vestibule.",d:"28th day, 9th Month"},
+    {id:"2e",name:"Second Eastern Hall",tag:"2\u00b7E",x:2,y:0,cat:"hall",lvl:"Middle",desc:"The Prophet departs toward it after the meeting.",q:"he walked in an unhurried manner to the Doorway leading to the Second Eastern Hall.",d:"20th day, 7th Month"},
+    {id:"19e",name:"Nineteenth Eastern Hall",tag:"19\u00b7E",x:19,y:0,cat:"hall",lvl:"Middle",desc:"Beneath the cloud-filled Upper Hall through which the narrator descends \u2014 a 30 m drop \u2014 into the Drowned Halls. Deep in the derelict East.",q:"the one that stands directly above the Nineteenth Eastern Hall.",d:"10th day, 6th Month"},
+    {id:"20e",name:"Twentieth Eastern Hall",tag:"20\u00b7E",x:20,y:0,cat:"hall",lvl:"Middle",desc:"Beneath an Upper Hall the narrator had already catalogued in detail.",q:"the Hall above the Twentieth Eastern Hall. I had described the character and condition of the Statues.",d:"10th day, 6th Month"},
+
+    // Western (deep exploration)
+    {id:"1w",name:"First Western Hall",tag:"1\u00b7W",x:-1,y:0,cat:"statue",lvl:"Middle",always:1,desc:"The climax of the Flood and Ketterley's death. The Horned Giants (~6 m) strain from the walls flanking the Eastern Door; the narrator and Raphael shelter in a marble pocket behind a Giant's back, 7 m up.",q:"This is the Hall that contains the Statues of the Horned Giants... on either side of the Eastern Door.",d:"26th day, 9th Month"},
+    {id:"3w",name:"Third Western Hall",tag:"3\u00b7W",x:-3,y:0,cat:"hall",lvl:"Middle",desc:"Where the Tides once cast up the Other after his near-drowning \u2014 seven halls from where he began.",q:"the Tides cast him up on the Pavement of the Third Western Hall (a distance of seven Halls).",d:"29th day, 5th Month"},
+    {id:"4w",name:"Fourth Western Hall",tag:"4\u00b7W",x:-4,y:0,cat:"statue",lvl:"Middle",desc:"The Statue of the Dog-Fox teaching two Squirrels and two Satyrs (NW corner) \u2014 a favourite, and the landmark at the end of the Prophet's route. A gentle tide runs beneath it.",q:"The Statue of the Dog-Fox teaching two Squirrels and two Satyrs is in the Fourth Western Hall.",d:"1st day, 7th Month"},
+    {id:"6w",name:"Sixth Western Hall",tag:"6\u00b7W",x:-6,y:0,cat:"hall",lvl:"Middle",desc:"Where all the birds of the House gathered in silence when clouds invaded the Middle Halls.",q:"In the Sixth Western Hall I found them at last... perched on the Shoulders and Heads of every Statue.",d:"31st day, 5th Month"},
+    {id:"11w",name:"Eleventh Western Hall",tag:"11\u00b7W",x:-11,y:0,cat:"hall",lvl:"Middle",desc:"Crossed on the way to the Forty-Third Vestibule; the great South Wind knocked the narrator from stone to stone.",q:"As I crossed the Eleventh Western Hall, the Wind knocked me from one Paving Stone to another.",d:"30th day, 5th Month"},
+
+    // North-Western (Raphael's quarter)
+    {id:"1nw",name:"First North-Western Hall",tag:"1\u00b7NW",x:-1,y:1,cat:"hall",lvl:"Middle",desc:"Waypoint on the Prophet's route \u2014 follow its Southern wall to the third door.",q:"You will be in the First North-Western Hall. Follow the Southern (left-hand) Wall.",d:"1st day, 7th Month"},
+    {id:"2nw",name:"Second North-Western Hall",tag:"2\u00b7NW",x:-2,y:2,cat:"hall",lvl:"Middle",desc:"Empty, quiet, peaceful \u2014 the start of the night route toward 16.",q:"I walked to the Second North-Western Hall. All was empty; all was quiet.",d:"17th day, 9th Month"},
+    {id:"3nw",name:"Third North-Western Hall",tag:"3\u00b7NW",x:-3,y:3,cat:"dead",lvl:"Middle",desc:"An Empty Niche holds the Biscuit-Box Man (James Ritter). Ketterley's cleaned bones are destined to join him here.",q:"The Biscuit-Box Man is a skeleton that resides in an Empty Niche in the Third North-Western Hall.",d:"10th day, 5th Month"},
+    {id:"faun",name:"The Faun",tag:"the Faun",x:-4.5,y:4.5,cat:"statue",lvl:"Middle",always:1,desc:"Standing at the Door between the Fourth and Fifth North-Western Halls: half-man, half-goat, a forefinger to his lips. The narrator's most beloved statue and his place of refuge \u2014 'Hush! Be comforted!'",q:"a Door between the Fifth and Fourth North-Western Halls. It is the Statue of a Faun.",d:"18th day, 5th Month"},
+    {id:"6nw",name:"Sixth North-Western Hall",tag:"6\u00b7NW",x:-6,y:6,cat:"hall",lvl:"Middle",always:1,desc:"The chalk-message dialogue with 16/Raphael, among the rooks on the High Statues. The furthest point 16 ever reached \u2014 'the 13th room from the entrance.' The Flood warning was written here.",q:"directions from the Sixth North-Western Hall to the First Vestibule.",d:"13th day, 9th Month"},
+    {id:"18nw",name:"Eighteenth North-Western Hall",tag:"18\u00b7NW",x:-18,y:18,cat:"hall",lvl:"Middle",desc:"Fresh-water bowls; reached across the Twenty-Fourth Vestibule from the Sixth North-Western Hall.",q:"in the Eighteenth North-Western Hall on the other side of the Twenty-Fourth Vestibule.",d:"21st day, 9th Month"},
+    {id:"19nw",name:"Nineteenth North-Western Hall",tag:"19\u00b7NW",x:-19,y:19,cat:"statue",lvl:"Middle",desc:"A kneeling man with a sword broken in five pieces \u2014 Piranesi's marble emblem for Dr Ketterley.",q:"a statue that stands in the nineteenth north-western hall.",d:"29 Nov 2018"},
+
+    // North-Eastern
+    {id:"1ne",name:"First North-Eastern Hall",tag:"1\u00b7NE",x:1,y:1,cat:"hall",lvl:"Middle",desc:"The meeting with the Prophet, Laurence Arne-Sayles: great shafts of light down a Wall of Statues.",q:"From the Windows of the First North-Eastern Hall great shafts of Light descended.",d:"20th day, 7th Month"},
+    {id:"2ne",name:"Second North-Eastern Hall",tag:"2\u00b7NE",x:2,y:2,cat:"statue",lvl:"Middle",desc:"The six 'message' statues the birds fly to: Angel with a Trumpet, a Ship on little Waves, a Man with a Book, a Woman with a Dish of Clouds, a Child with a Flower, a Sack of Grain devoured by Mice.",q:"One group flew to the Statue of an Angel blowing a Trumpet.",d:"11th day, 6th Month"},
+    {id:"18ne",name:"Eighteenth North-Eastern Hall",tag:"18\u00b7NE",x:18,y:18,cat:"dead",lvl:"Upper",desc:"Directly below the Upper Hall of the Concealed Person \u2014 the only one of the Dead the Great Flood cannot reach. Reached by the Staircase in the Thirteenth Vestibule.",q:"the one positioned directly above the Eighteenth North-Eastern Hall.",d:"10th day, 5th Month"},
+    {id:"20ne",name:"Twentieth & Twenty-First North-Eastern Halls",tag:"20\u00b7NE",x:20,y:20,cat:"hall",lvl:"Middle",desc:"Their ceilings collapsed two years ago; clouds now drift through the broken ceilings, driving the birds out of the Middle Halls.",q:"the Ceilings of the Twentieth and Twenty-First North-Eastern Halls collapsed.",d:"31st day, 5th Month"},
+
+    // South-Eastern
+    {id:"6se",name:"Sixth South-Eastern Hall",tag:"6\u00b7SE",x:6,y:-6,cat:"dead",lvl:"Middle",desc:"The Folded-Up Child \u2014 a girl of about seven, knees to chin, a coral-and-fishbone necklace \u2014 on an Empty Plinth. The narrator's most-visited Dead.",q:"She is posed on an Empty Plinth in the Sixth South-Eastern Hall.",d:"10th day, 5th Month"},
+    {id:"12se",name:"Twelfth South-Eastern Hall",tag:"12\u00b7SE",x:12,y:-12,cat:"hall",lvl:"Middle",desc:"Its doorway opens toward the Seventeenth Vestibule, where the birds dance at evening.",q:"the Doorway of the Twelfth South-Eastern Hall intending to pass through the Seventeenth Vestibule.",d:"11th day, 6th Month"},
+    {id:"18se",name:"Eighteenth South-Eastern Hall",tag:"18\u00b7SE",x:18,y:-18,cat:"hall",lvl:"Middle",desc:"A Window looks across a Great Courtyard to where the Other stands at his own window.",q:"This morning I looked out of a Window in the Eighteenth South-Eastern Hall.",d:"7th day, 5th Month"},
+    {id:"19se",name:"Nineteenth South-Eastern Hall",tag:"19\u00b7SE",x:19,y:-19,cat:"statue",lvl:"Middle",desc:"A Statue of a different Gardener, pruning a Rose Bush.",q:"in the Nineteenth South-Eastern Hall there is a Statue of a different Gardener pruning a Rose Bush.",d:"21st day, 8th Month"},
+    {id:"23se",name:"Twenty-Third South-Eastern Hall",tag:"23\u00b7SE",x:23,y:-23,cat:"hall",lvl:"Middle",desc:"A hiding-practice hall \u2014 gaps between statues to press into \u2014 with a Statue of a Man and a Boy mapping Stars.",q:"you have just seen someone \u2013 16! \u2013 in the Twenty-Third South-Eastern Hall. Now hide Yourself!",d:"1st day, 8th Month"},
+
+    // South-Western (meeting quarter)
+    {id:"1sw",name:"First South-Western Hall",tag:"1\u00b7SW",x:-1,y:-1,cat:"hall",lvl:"Middle",desc:"Reached by a Corridor off the First Vestibule; the first hall whose statue-catalogue the narrator completed.",q:"So far I have completed the First and Second South-Western Halls.",d:"7th day, 5th Month"},
+    {id:"2sw",name:"Second South-Western Hall",tag:"\u2605 meeting",x:-2,y:-2,cat:"meeting",lvl:"Middle",always:1,desc:"The regular meeting place with the Other \u2014 Tuesdays and Fridays, by the Empty Plinth. Site of the star-map talks, the chalked letter, and the plan to drown him.",q:"This morning at ten o'clock I went to the Second South-Western Hall to meet the Other.",d:"29th day, 5th Month"},
+    {id:"3sw",name:"Third South-Western Hall",tag:"3\u00b7SW",x:-3,y:-3,cat:"hall",lvl:"Middle",desc:"Where the narrator continues his Catalogue of Statues.",q:"I set off for the Third South-Western Hall to continue my work on the Catalogue.",d:"31st day, 5th Month"},
+    {id:"4sw",name:"Fourth South-Western Hall",tag:"4\u00b7SW",x:-4,y:-4,cat:"hall",lvl:"Middle",desc:"Within the South-Western Halls \u2014 the region that named the year the Albatross came.",q:"IN THE YEAR THE ALBATROSS CAME TO THE SOUTH-WESTERN HALLS.",d:"entry headings"},
+    {id:"14sw",name:"Fourteenth South-Western Hall",tag:"14\u00b7SW",x:-14,y:-14,cat:"dead",lvl:"Middle",desc:"The People of the Alcove \u2014 ten skeletons and a monkey, including the Fish-Leather Man \u2014 on an Empty Plinth in the Northernmost Alcove. Likely Sylvia D'Agostino, Stanley Ovenden, Maurizio Giussani.",q:"an Empty Plinth in the Northernmost Alcove of the Fourteenth South-Western Hall.",d:"10th day, 5th Month"},
+
+    // Vestibules with defensible positions
+    {id:"v9",name:"Ninth Vestibule",tag:"V\u00b79",x:-2,y:2,vx:-0.45,vy:0.45,cat:"vestibule",lvl:"Middle",desc:"Three great Staircases and the Joining of Three Tides, once every eight years. The Woman carrying a Beehive stands 15 m up the Western wall; a Gardener digs in the NW corner. 'Two Halls West and North' of the origin.",q:"The Ninth Vestibule is remarkable for the three great Staircases it contains.",d:"1st day, 5th Month"},
+    {id:"v22",name:"Twenty-Second Vestibule",tag:"V\u00b722",x:-5,y:-5,cat:"vestibule",lvl:"Middle",desc:"'Five Halls South and West' of the First Vestibule. A tide came tumbling up its Staircase during the Great Flood.",q:"Five Halls South and West of here, in the Twenty-Second Vestibule, another Tide was already rising.",d:"27th day, 9th Month"},
+    {id:"v24",name:"Twenty-Fourth Vestibule",tag:"V\u00b724",x:-7,y:7,cat:"vestibule",lvl:"Middle",desc:"A bank of white marble pebbles, deposited by the Tides, half-blocks the Mouth of the Staircase to the Lower Halls. In its NE corner 16 spelled out 'ARE YOU MATTHEW ROSE SORENSEN?' Adjoins the Sixth North-Western Hall.",q:"a shallow, sloping bank of white marble pebbles, which partially blocks the Mouth of the Staircase.",d:"21st day, 9th Month"},
+
+    // Far-field beacons (off true-scale; placed at map edge along their axis)
+    {id:"52w",name:"Fifty-Second Western Hall",tag:"52\u00b7W \u2192",bx:-1,by:0,r:16,cat:"far",lvl:"Middle",truec:"(\u221252, 0)",desc:"A wall ablaze with golden light; an adjoining Antechamber holds a Statue of a Woman offering a dish to a Bear Cub. A waypoint on the long road west.",q:"In the Fifty-Second Western Hall I came upon a Wall ablaze with so much golden Light.",d:"19th day, 6th Month"},
+    {id:"88w",name:"Eighty-Eighth Western Hall",tag:"88\u00b7W \u2192",bx:-1,by:0,r:19,cat:"far",lvl:"Middle",truec:"(\u221288, 0)",desc:"A herring-gull colony among Statues of an Elephant and an Elderly King. Torn journal-scraps \u2014 'minotaur,' 'kill him' \u2014 were found woven into thirty-five nests. Half a day's walk west.",q:"A colony of herring gulls had built their nests in this Hall.",d:"19th day, 6th Month"},
+    {id:"192w",name:"One-Hundred-and-Ninety-Second Western Hall",tag:"192\u00b7W \u2192",bx:-1,by:0,r:22,cat:"far",lvl:"Middle",truec:"(\u2212192, 0) \u00b7 20 km",desc:"The 'temple' hall: one Door, no Windows, total darkness \u2014 and a Crowd of statues all turned to face the Moon, foremost a Young Man with a Banner. Twenty kilometres and 3.76 hours from the origin; the Other's intended ritual site.",q:"It is the One-Hundred-and-Ninety-Second Western Hall and it is 20 kilometres from the First Vestibule.",d:"15th day, 6th Month"},
+    {id:"960w",name:"Nine-Hundred-and-Sixtieth Hall to the West",tag:"960\u00b7W \u2192",bx:-1,by:0,r:25,cat:"far",lvl:"Middle",truec:"(\u2212960, 0)",desc:"The furthest west the narrator has ever travelled.",q:"I have travelled as far as the Nine-Hundred-and-Sixtieth Hall to the West.",d:"7th day, 5th Month"},
+    {id:"38s",name:"Thirty-Eighth Southern Hall",tag:"38\u00b7S \u2192",bx:0,by:-1,r:19,cat:"far",lvl:"Middle",truec:"(0, \u221238)",desc:"Where the Coral Halls begin \u2014 a long succession running south and west, their statues overgrown by coral in an age when the sea stood here. Dry now.",q:"the Coral Halls, a long succession of Halls extending south and west from the Thirty-Eighth Southern Hall.",d:"29th day, 9th Month"},
+    {id:"768s",name:"Seven-Hundred-and-Sixty-Eighth Hall to the South",tag:"768\u00b7S \u2192",bx:0,by:-1,r:24,cat:"far",lvl:"Middle",truec:"(0, \u2212768)",desc:"The furthest south the narrator has ever travelled.",q:"the Seven-Hundred-and-Sixty-Eighth Hall to the South.",d:"7th day, 5th Month"},
+    {id:"890n",name:"Eight-Hundred-and-Ninetieth Hall to the North",tag:"890\u00b7N \u2192",bx:0,by:1,r:23,cat:"far",lvl:"Middle",truec:"(0, 890)",desc:"The furthest north the narrator has ever travelled.",q:"the Eight-Hundred-and-Ninetieth Hall to the North.",d:"7th day, 5th Month"}
+  ];
+
+  /* MORE: per-location detail compiled by a full-text sweep of the novel (one agent per place) */
+  var MORE={"v1":["He rarely visits despite naming it the origin of his numbering system, and no longer remembers the strong connection that led him to choose it (1st day, 7th month)","It is larger, gloomier and noticeably colder than other vestibules, with a persistent draught carrying a scent of rain, metal and petrol (1st day, 7th month)","Standing between the two south-eastern Minotaurs he once glimpsed what looked like a misty, flickering corridor and overheard two crude voices from beyond it (1st day, 7th month)","Junk-food wrappers, a filthy sleeping bag under the Staircase, and a note from 'Laurence' about a fox statue were found here; he replied and left it by a Minotaur (1st day, 7th month)","The Drowned Halls, a derelict maze of freshwater lakes formed by rain and fallen masonry, begin immediately east of here (8th day, 6th month)","He later realized the vagrant James Ritter had once slept beneath the Staircase here and left behind the food wrappers (21st day, 8th month)","Ritter's recovered journal scraps reveal his captor fed him beside the Minotaur statues here, implying years of imprisonment at this spot (1st day, 9th month)","Tracing an unfamiliar perfume trail past a Minotaur along the southern wall, he realized that 16 had secretly passed through (5th day, 9th month)","16's chalk directions, traced back here from the Sixth North-Western Hall, labeled this Vestibule simply as 'the entrance' (13th day, 9th month)","During the great Flood he waited here for hours in the rain, then trailed Ketterley, dressed in a life jacket, as he crossed toward the flooding First Western Hall (27th day, 9th month)","He and Raphael later waded back here and climbed the Great Staircase to safety, soaked, with birds gathering around them; he called the whole House his home (27th day, 9th month)","At dusk they sat again on the Staircase, where he revealed that Ketterley had named him 'Piranesi'; soon after, a pale owl, his first living one, perched on the wall (28th day, 9th month)","Raphael, who privately nicknamed it the 'minotaur room', met him here to begin a tour of the House and returned here afterward to praise its quiet (29th day, 9th month)","Laurence Arne-Sayles's own written account describes first stumbling into this Minotaur-filled chamber through a childhood rose-garden door, hearing what sounded like a thundering sea"],"threshold":["A cold draught chills the vestibule several degrees below neighboring halls, carrying smells of rain, metal and petrol (1st day, 7th month).","Piranesi first notices misty flickering lights and a wave-like dashing sound through the gap, then flees startled after overhearing two arguing voices (1st day, 7th month).","Windblown litter, crisp packets, fish-finger and sausage-roll wrappers, regularly drifts through from the other side; Piranesi burns it to preserve the House's beauty.","A note signed 'Laurence' asking for directions to a fox-and-squirrels statue blew in among the rubbish; Piranesi answered it and left the reply at a Minotaur's foot (1st day, 7th month).","Kidnap victim James Ritter told police he had to keep returning to 'the minotaurs' because his captor left his dinner there.","Piranesi realizes Ritter's account of sleeping under a marble staircase matches the grimy space below the vestibule's own staircase, where he'd found an abandoned sleeping bag (21st day, 8th month).","Recovered scraps of Ritter's captive writing describe meals left in the minotaur room and fantasies of bludgeoning his captor with a marble shard (1st day, 9th month).","An unfamiliar perfume of lemon, geranium, hyacinth and narcissi lingers at the doorway, revealing that 16 passed through unseen (5th day, 9th month).","Arne-Sayles's own memoir describes a second, separate door into the same minotaur hall, hidden in a gap between two named rose bushes in his childhood garden.","Ketterley pulled Matthew through by chanting a Brittonic-sounding ritual invoking 'Addedomarus' beside a candle until the room's air turned cold, damp and wave-loud (15 November 2012).","Entering Ketterley's Battersea house beforehand, Matthew smelled not city rain but a strange oceanic vastness, foreshadowing the flooded halls beyond (15 November 2012).","After her first visit, Raphael exits back into her own world through this same shadowed gap, promising to return the next evening (27th day, 9th month).","Piranesi later leads freed captive James Ritter back through this corridor so he can revisit his old sleeping place beneath the staircase (27 November 2018)."],"1n":["After finding a gift of new canvas shoes, he showed them off to the crows here, but they only cawed and flew back to their perches (16th day, 6th month).","Sensing a stranger's perfume near the First Vestibule, he doubled back into this hall hoping to find the same scent, but found no trace of it (5th day, 9th month).","In a long-held daydream of leading a future companion through the House, he imagined announcing this hall as the very first stop of the tour (29th day, 9th month)."],"2n":["Besides his journals, he also stores his pocket watch behind the Angel statue, avoiding daily carry for fear Sea Water damages it (17th day, 5th month).","He once returns to this Hall specifically to collect blue chalk, later used to reply to 16's directional message elsewhere (13th day, 9th month).","Roughly every two weeks he sits cross-legged on the Hall's pavement to update his Index, finding it easier than indexing entries right away (8th day, 8th month).","During one such session he finds an impossible reference to 'Journal no. 21' naming Stanley Ovenden, the first crack in his sense of self (8th day, 8th month).","In that session he also notices index entries in a subtly younger version of his own hand, written with an unfamiliar pen (8th day, 8th month).","Climbing to the Angel statue, he empties the messenger bag and counts only nine journals, finding no evidence of extra hidden volumes (8th day, 8th month).","He discovers his first three journals were originally numbered 21-23, each relabeled 1-3 by scratching out a leading '2' (8th day, 8th month).","Shaken, he drops the offending journal on the Hall's pavement and walks away, later weeping in the Faun statue's embrace elsewhere (8th day, 8th month).","He returns here again to fetch his Index and Journals while investigating whether he is Matthew Rose Sorensen (21st day, 9th month).","He reasons the hiding place is secure because the Angel is just one statue among millions, so no enemy could find it by searching (21st day, 9th month).","Fearing a coming Flood might exceed the statue's roughly 5-metre height, he relocates the whole archive to the Upper Halls beside the 'Biscuit-Box Man' (26th day, 9th month)."],"3n":["Moonrise in this hall marked the moment he set out to witness the joining of three tides in the Ninth Vestibule (1st day, 5th month).","A howling south wind during a deep midwinter storm drove stinging snow into his bed here for days, part of events recalled in a later entry (30th day, 5th month).","He came back here to assemble nesting material for the albatrosses: a net lined with plastic, dry seaweed, spare feathers and a ragged jumper (30th day, 5th month).","One morning a stray cloud drifted into the hall, leaving its statues looking like pale images painted onto white mist (31st day, 5th month).","He describes the hall as full of roosting birds whose nighttime rustling normally comforts him, unlike an unnervingly silent hall he once slept in (20th day, 6th month).","After a breakdown over unfamiliar words found in his old journals, he retreated here to eat and calmed himself by visiting his favourite statues (9th day, 8th month).","Leaving here one morning bound for the Sixteenth Vestibule, he passed through the First Northern Hall and first noticed a stranger's lemon-and-hyacinth perfume (5th day, 9th month).","On a cold night he awoke here to see the statues faintly starlit, just before discovering the Other hunting the intruder he calls '16' (17th day, 9th month).","He ran back here to fetch a ragged shirt, later tearing it up to blindfold himself while erasing 16's chalked message elsewhere (17th day, 9th month).","After a furious, exhausting fantasy of taking revenge on the Other, he trudged back here at nightfall and collapsed asleep (21st day, 9th month).","While preparing for the coming Flood, he carried rescued plastic water-bowls back here after discovering the Other's hidden bag containing an inflatable boat and a gun (26th day, 9th month).","During the Flood he waded here through thigh-deep water to fetch fishing nets, fresh water and dried seaweed to help the injured Raphael (27th day, 9th month).","After the Flood receded and Raphael departed, he waded back through ankle-to-knee-deep water here and found his stored fuel too wet to light a fire (27th day, 9th month)."],"5n":["The Gorilla is carved squatting on its lower limbs, propped on powerful arms and fists, with a heavy overshadowing brow (18th day, 5th month).","Its scowling brow, which on a human face would signal anger, seems on the statue to convey the opposite feeling (18th day, 5th month).","Narrator brought his Journals and Index here, sitting cross-legged on the pavement facing the statue to research Sylvia D'Agostino, hoping it would 'lend strength' (20th day, 8th month).","He later returned with Index and Journals to sit opposite the statue again, invoking its 'Strength and Resolution' before researching Laurence Arne-Sayles (19th day, 9th month).","Long after leaving the House, he dreamed of standing here facing the gorilla statue on its plinth (30 November 2018).","In the dream the gorilla descended from its plinth and approached with a slow knuckle-walk, grey-white in the moonlight (30 November 2018).","He embraced the dream-gorilla's neck, telling it he was happy to be home, then woke realizing he was not (30 November 2018)."],"2s":["Named only in a spoken prediction made during a meeting in the Second South-Western Hall, where the narrator forecasts the coming tide's exact timing to reassure the anxious Other (29th day, 5th month)."],"19s":["The Other briefly straightens his back, pulls back his shoulders and lifts his head, a stance the narrator likens to the 'Statue of a Hierophant' here, while pretending to summon a dead king's spirit."],"1e":["This is the only place in the novel where First Eastern Hall is directly named; no other passage describes its own architecture or statues.","Piranesi reads the owl's emergence from here as a sign that a principle of Death is giving way to a principle of Life, given Ketterley's departure and Raphael's arrival (28th day, 9th month, second entry).","The moment occurs while Piranesi and Raphael are talking together in the adjoining First Vestibule, shortly after Dr Ketterley has left the House for good (28th day, 9th month, second entry)."],"2e":["The doorway to this Hall opens directly off the First North-Eastern Hall, where the Prophet had been standing beneath light-shafts studying a 'Wall of Statues' (20th day, 7th month).","The narrator gives no description of the Hall itself beyond its name; the Prophet simply walks off toward it, still carrying a raincoat, and is never followed there (20th day, 7th month)."],"19e":["Statues in the Upper Hall directly overhead showed brutal mythic violence: men fighting, abductions by centaurs and satyrs, an octopus tearing a person apart (10th day, 6th month).","Unlike most statues' serene expressions elsewhere in the House, these faces were contorted in screaming rage or anguish (10th day, 6th month).","Piranesi estimated the Upper Hall's size at roughly 200 by 120 metres, guessing from a similarly sized neighboring hall (10th day, 6th month).","He entered starving, having gone two days without food, hoping to reach fish in the Drowned Halls below (10th day, 6th month).","Feeling his way through dense cloud, he stepped into open air where the floor had collapsed and began to fall (10th day, 6th month).","He survived by landing in the outstretched hands of a statue of a man being trampled by a centaur, dubbed the 'Trampled Man' (10th day, 6th month).","He spent a full day and night wedged in the 'Trampled Man' statue's lap, cold and terrified, until wind cleared the cloud (10th day, 6th month).","The statue's attacking centaur formed a stone ceiling just centimetres above his head as he sheltered there (10th day, 6th month).","The trauma of this hall resurfaces later: recalling its screaming statues makes him hesitate before entering another unfamiliar dark hall (19th day, 6th month)."],"20e":["The hall lies beyond (adjacent to) the Nineteenth Eastern Hall, within the derelict, tide-cut-off region near the Drowned Halls east of the First Vestibule (10th day, 6th month).","Piranesi recalls that his earlier survey of its Upper Hall included a hand-drawn sketch he made of one of the statues there (10th day, 6th month)."],"1w":["16's perfume trail was traced to a point between this Hall's doorway and the corridor to First South-Western Hall, then lost (5th day, 9th month).","Piranesi found Ketterley's hidden grey holdall near the Hall's north-eastern corner, holding a gun, a folded inflatable boat, a foot-pump, extendable rods and paddle-blades (26th day, 9th month).","He briefly considered dropping the gun down the Great Staircase into the Tides but put it back in the bag instead (26th day, 9th month).","On the day of the Flood, Piranesi hid in a niche near the Hall's door, watching Ketterley inflate his boat (27th day, 9th month).","The first floodwater here appeared as a thin film washing through the Hall's North-Western Doors while the boat was being pumped up (27th day, 9th month).","Piranesi unsettled Ketterley by reciting Matthew Rose Sorensen's memories of a house visit accompanied by Berlioz music (27th day, 9th month).","When Ketterley dived for the dropped gun, Piranesi kicked it away across the pavement toward the Northern Wall (27th day, 9th month).","Raphael called out for 'Ketterley' from the doorway of the First Southern Hall, wearing jeans and a green jumper, hair in a ponytail (27th day, 9th month).","Beside the left-hand Horned Giant stands a statue of a father plucking a thorn from his small son's foot, used as a climbing route (27th day, 9th month).","Above that niche's triangular pediment runs a Deep Cornice or shelf spanning the whole length of the Hall (27th day, 9th month).","Ketterley fired four shots at the pair, chipping a statue overhead and cutting Piranesi's forehead (27th day, 9th month).","A wave threw Ketterley against the Southern Wall about fifteen metres up, the moment Piranesi believes he died (27th day, 9th month).","The abandoned boat spun untethered across the flood, drifting from the Northern Wall toward the Western end, always just eluding Ketterley (27th day, 9th month).","The next morning Piranesi found the boat still afloat and undamaged in the ankle-deep water that remained (28th day, 9th month)."],"3w":["After finding him, Piranesi wrapped the shivering Other in a blanket and fed him hot soup made of seaweed and mussels (29th day, 5th month).","As soon as he could walk, the Other left wordlessly, and Piranesi never learned where he went afterward (29th day, 5th month).","The near-drowning occurred in the sixth month of an earlier year Piranesi calls 'Year of the Constellations' (29th day, 5th month).","Since that ordeal, the Other has remained afraid of the Tides whenever they roar through the halls (29th day, 5th month)."],"4w":["Piranesi once spotted a strange bright yellow speck floating on the tide beneath this hall and waded out to retrieve it (19th day, 5th month).","The retrieved object was a beautiful curved, two-pointed leaf-like thing with a water-repellent surface, unlike any known sea vegetation, puzzling him as possibly meant to exist in air (19th day, 5th month).","The sighting itself had actually occurred six or seven months before he recorded it in his journal.","Reaching the hall requires passing through the Western Door from the First Vestibule, then a third door into the First North-Western Hall, then another third door along its southern wall into a corridor (1st day, 7th month).","The hall sits at the far end of that corridor, giving it a hidden, tucked-away position relative to the First Vestibule (1st day, 7th month)."],"6w":["The birds were found perched on the shoulders and heads of every statue, and on plinths and columns, sitting silently as if waiting (31st day, 5th month)","The narrator reached this hall only after the whole House had gone eerily silent, with no birds flying or singing anywhere else that day (31st day, 5th month)","The discovery came while the narrator was travelling toward the Third South-Western Hall to continue cataloguing statues (31st day, 5th month)","This event gave its name to a chapter/section heading, 'The birds sit silent in the Sixth Western Hall' (31st day, 5th month)"],"11w":["The narrator crossed it very early one winter morning, rising before dawn to gather seaweed for fuel and food.","The halls along that morning's route, including this one, were grey and dim, lit only by a faint suggestion of light in the windows rather than true daylight.","Being buffeted stone to stone amused him; he likened himself to a chess piece forced into unusually original 'moves' across the paving.","The crossing took place during the same prolonged southern Wind that had blown stinging snow through the halls for days that winter.","This crossing led onward to his descent into the Lower Hall beneath the Thirty-Seventh South-Western Hall, where he then sighted the albatross."],"1nw":["Reached by leaving the Fourth Western Hall through its Western Door, then taking the third door on the right of the next hall (1st day, 7th month).","Its Southern-wall third door leads into a corridor ending back at the Fourth Western Hall, near a statue of a Dog-Fox teaching squirrels and satyrs (1st day, 7th month).","The directions were written by Piranesi replying to a note signed Laurence, found crumpled among wind-blown crisp packets in the First Vestibule (1st day, 7th month)."],"2nw":["The narrator crossed this hall late at night dressed warmly in shoes and a woollen jumper because of the bitter cold (17th day, 9th month)","A door on the hall's right-hand side opens into a further hall, where he soon overheard the Other hunting for someone called 'Raphael' (17th day, 9th month)"],"3nw":["The niche also holds a red tin box printed with a biscuit picture and labelled 'Huntley Palmers Family Circle', containing the skeleton's small bones (10th day, 5th month)","Narrator rebound the skeleton's loose long bones with new cords made from fish leather after the original seaweed twine had rotted and fallen apart (10th day, 5th month)","The Prophet (Arne-Sayles), on seeing the tin, recalls it once sitting on a table in his university study before it somehow ended up here (20th day, 7th month)","Ahead of the great Flood, narrator emptied this niche, bagging the loose bones (leaving the boxed ones aside) to carry them to safety (26th day, 9th month)","He hauled the bundle up a nearby staircase and set it temporarily on the plinth of an Upper-Hall statue of a shepherdess holding a lamb (26th day, 9th month)","Long after leaving the Halls, narrator plans to return and fetch Ketterley's tide-cleaned bones to lay them here beside this skeleton (28 November 2018)","He intends to copy the existing arrangement exactly for Ketterley: long bones bound in the centre, skull on the right, small bones boxed on the left (28 November 2018)"],"faun":["The statue has a slightly smiling face and a head of exuberant curls (18th day, 5th month).","The narrator once dreamed of the 'Faun' standing in a snowy forest, speaking to a female child (18th day, 5th month).","For a long time he read the raised-finger gesture as a warning of unspecified danger, before later reinterpreting it as comfort (18th day, 5th month).","After discovering disorienting, seemingly mad entries in his own Journal about the outside world, he fled through several halls and found himself before this statue (8th day, 8th month).","He climbed onto the statue's plinth and flung himself into its arms, wrapping an arm around its neck and intertwining his fingers with its stone fingers (8th day, 8th month).","He wept great heaving sobs there, mourning what felt like his lost sanity (8th day, 8th month).","He later called this episode 'the Embrace of the Faun' when recounting it (9th day, 8th month).","The morning after, he left the embrace and wandered miserably through the House before forcing himself to eat and drink in the Third Northern Hall (9th day, 8th month).","He then deliberately revisited his favorite statues, including the Faun, to soothe himself with their beauty and noble expressions (9th day, 8th month)."],"6nw":["First chalk message from 16 was found here after five days of rain, on a day the World turned light again (13th day, 9th month).","Rooks nesting on the High Statues swooped down to greet Piranesi, landing on his shoulders and pecking his ear as he fed them fish scraps (13th day, 9th month).","Piranesi notes he owns only white, blue and pink chalk, never yellow, which is how he knew the marks were not his own (13th day, 9th month).","16 rewrote his directions beneath every doorframe along the Path as a backup in case Tides destroyed the earlier marks (13th day, 9th month).","From the height of 16's chalk marks Piranesi calculated she stands roughly 12 to 15 centimetres shorter than himself (13th day, 9th month).","16's written message here once covered a Pavement area of about 60 by 80 centimetres (17th day, 9th month).","Piranesi blindfolded himself with half a torn shirt to sweep away 16's message without reading it, leaving some fragments behind (17th day, 9th month).","He deliberately left certain unread fragments intact, later realizing one revealed the name 'Valentine Ketterley' (19th day, 9th month).","It was here, unseen, that Piranesi first heard 16's voice, cursing the rooks while writing, and so learned she was a woman (18th day, 9th month).","His Flood warning defined a Perilous Region measured outward from this Hall: six Halls west, four north, five east, six south (21st day, 9th month).","Two of Piranesi's water-collecting bowls were stored nearby in the Eighteenth North-Western Hall, reached via the Twenty-Fourth Vestibule.","The Flood warning message mysteriously vanished, and Piranesi found only faint chalk traces where the Other had erased it (22nd day, 9th month).","While searching for 16 before the Flood, Piranesi walked the Path between here and the First Vestibule six times without finding her (27th day, 9th month)."],"18nw":["Piranesi stops here to drink deeply, feeling dizzy, parched and breathless after a disorienting vision triggered by 16's message (21st day, 9th month)","The stop occurs right after he reads 16's pebble-spelled message asking if he is Matthew Rose Sorensen, before he heads off to consult his Index (21st day, 9th month)","He recalls this hall, together with the Sixth North-Western Hall, as holding two of his fresh-water bowls he needs to retrieve before the coming Flood (21st day, 9th month)"],"19nw":["The statue also shows a shattered sphere, its broken pieces scattered around the plinth beside the broken sword (29th day, 11th month, 2018)","In the narrator's interpretation, the man broke the sphere with his sword because he wanted to understand it, destroying both in the process (29th day, 11th month, 2018)","Part of the man refuses to accept the sphere is ruined; he clutches its fragments, still hoping they will yield new knowledge (29th day, 11th month, 2018)","The narrator specifically summons this statue's image whenever he thinks of Dr Ketterley, using it as his private mental symbol for him (29th day, 11th month, 2018)"],"1ne":["Narrator entered the hall through one of its Western Doors, coming upon the standing stranger by surprise (20th day, 7th month)","The hall has a stone Pavement; the visiting old man's raincoat lay in a heap on it (20th day, 7th month)","After their talk the old man walked unhurried out through a doorway leading to the Second Eastern Hall (20th day, 7th month)","Narrator later judges that a truly rational version of himself would never have spoken with the Prophet in this hall (19th day, 9th month)"],"2ne":["Narrator entered the Hall one morning and found it full of small birds of different kinds (11th day, 6th month).","About twenty birds first rushed together to the Northern Wall and alighted on the 'High Statues' there before swooping to the Western Wall (11th day, 6th month).","Narrator recognized this mass movement as the preface to a message, recalling a similar earlier episode in the Ninth Vestibule (11th day, 6th month).","He called out that he was paying attention and asked the birds what they wished to tell him (11th day, 6th month).","The birds split into two groups that visited the six statues in three paired rounds, delivering the message in stages rather than all at once (11th day, 6th month).","After the third pairing the birds dispersed around the Hall and the narrator thanked them aloud (11th day, 6th month).","Narrator interpreted the six images as a coded message: a message arriving from far away, obscure or hidden writing, and innocence being gradually worn away (11th day, 6th month).","He planned to wait a few months and re-examine this bird communication later, hoping intervening events would clarify its meaning (11th day, 6th month).","This episode is presented as the strongest evidence for his theory that birds' collective behavior carries meaningful, oracle-like wisdom."],"20ne":["The collapse was momentous enough that Piranesi named a whole calendar year after it, used to date journal notebooks six and seven.","The changed weather following the collapse makes the wider region of the House feel generally chill and grey, not only affecting birds (31st day, 5th month).","That same named year, the Other's gifts included plastic bowls Piranesi uses to catch rainwater dripping through ceiling cracks onto statues elsewhere in the House."],"6se":["Ahead of the great Flood, the narrator carried the Folded-Up Child up the nearest staircase to safety in the Upper Halls, since her hall lay in the water's path (26th day, 9th month).","He left her snuggled inside a blanket during the move (unlike the unwrapped People of the Alcove) so she would feel safe in the unfamiliar new place (26th day, 9th month)."],"12se":["Narrator recalls coming to this Hall's doorway once on an autumn evening, intending to continue onward (11th day, 6th month)","He found the adjoining vestibule impassable because it was full of birds all in flight, seen from this doorway (11th day, 6th month)","He notes he has witnessed the bird-dance from this spot on several occasions, always evenings in the later months of the year (11th day, 6th month)","At the time he was en route to the Eighth Vestibule to fish, carrying nets and a homemade lobster trap (11th day, 6th month)"],"18se":["Narrator waved and jumped energetically trying to get the Other's attention across the courtyard, but the Other never noticed him (7th day, 5th month).","The Other's window was tall and dark, framing his head with its high forehead and trimmed beard in one corner while he stood lost in thought (7th day, 5th month).","Narrator attributes the Other's failure to notice him simply to the House having so many windows (7th day, 5th month)."],"23se":["A buzzard flew into the hall hunting smaller birds, circled it, and perched atop the 'Man and a Boy mapping Stars' statue for half an hour without noticing him (1st day, 8th month).","This is the hall Piranesi imagines specifically when drilling himself on how to vanish the instant he spots '16' approaching (1st day, 8th month)."],"1sw":["While following an unfamiliar perfume trail through the First Vestibule, the narrator lost the scent at the doorway of the corridor leading toward this hall (5th day, 9th month)."],"2sw":["Piranesi's Statue Catalogue records that he had finished cataloguing the position, size and subject of statues here and in the First South-Western Hall (7th day, 5th month)","During an incoming tide, the Hall audibly 'thrummed' with each boom like a plucked instrument string, unnerving the tide-fearing Other (29th day, 5th month)","Piranesi reassured the anxious Other that this Hall stays dry, though the nearby Second Southern Hall would flood ankle-deep for about an hour (29th day, 5th month)","Here the Other performed his ceremonial 'Addy Domarus' ritual, invoking a dead king's spirit, with Piranesi positioned two metres south of him facing north (15th day, 6th month)","The Other left Piranesi a surprise gift here: a box labelled 'AQUARIUM' containing new canvas shoes, set on top of the Empty Plinth (16th day, 6th month)","Here the Other first warned Piranesi never to speak to a mysterious intruder he called '16,' insisting this person meant them harm (26th day, 6th month)","Here the Other told Piranesi that if '16' ever drove him mad, killing him would regretfully be the necessary solution (24th day, 7th month)","Here the Other admitted he had obtained a gun meant for '16,' ruefully joking that he was a poor shot (14th day, 9th month)","Here Piranesi confronted the Other over concealing that '16' was a woman, and the Other admitted lying so Piranesi would not sympathize with her (18th day, 9th month)","Piranesi met the Other here to warn of an imminent Great Flood; the Other seemed unconcerned for his own safety and dismissive of the risk to '16' (21st day, 9th month)","During the climactic Flood, tides could be heard booming with mounting force against the walls of the Second and Third South-Western Halls (27th day, 9th month)"],"3sw":["Narrator set out for this Hall to resume Catalogue of Statues work on a cold, cloud-hazed morning after waking in the Third Northern Hall (31st day, 5th month)","Reaching this Hall meant first passing through the Second South-Western Hall, where he found a gift of new canvas shoes waiting on the Empty Plinth (16th day, 6th month)","During the great Flood, seawater surged in and filled this Hall together with the Second South-Western Hall (27th day, 9th month)","The waves' dull thud against this Hall's walls was audible nearby while the narrator confronted the Other (Ketterley) in the First Western Hall over his boat and gun (27th day, 9th month)","As the tide from the Twenty-Second Vestibule strengthened, it struck this Hall's walls with increasing force during the confrontation (27th day, 9th month)"],"14sw":["Piranesi wondered whether, when nearing death, he should lie down among the People of the Alcove, since space remains for about four more adults (10th day, 5th month)","Among the ten remains he identified three as female, three as male, and four of indeterminate gender (10th day, 5th month)","During Flood preparations, Piranesi carried the People of the Alcove up the nearest staircase to safety in the Upper Halls (26th day, 9th month)","While preparing for the Flood, he collected his last plastic bowls used for gathering fresh water from this Hall (26th day, 9th month)","The Hall can be reached via a detour from the Tenth Southern Hall (29th day, 9th month)","Piranesi brought Raphael here to see the People of the Alcove, and she gently touched one male skeleton's tibia in comfort (29th day, 9th month)","Raphael called the remains 'poor things' and suggested Arne-Sayles probably murdered at least one, unsettling Piranesi (29th day, 9th month)","Piranesi resisted viewing the remains as murder victims, preferring to think of them as good, noble, and peaceful (29th day, 9th month)"],"v9":["During the Joining of Tides, three tides arrive in sequence: a mild Eastern tide first, a violent Western tide second, then an explosive Northern tide (1st day, 5th month)","The Beehive carried by the 'Woman carrying a Beehive' is studded with marble bees the size of a thumb, one crawling unsettlingly over her left eye (1st day, 5th month)","Piranesi shelters from the joined tides squeezed into the Woman's niche, nearly swept off the wall by a surge before clinging to her legs (1st day, 5th month)","After the tide recedes, he finds a broken marble finger from some distant statue, carried there and left in his hand (1st day, 5th month)","He gathers seaweed here for a nourishing breakfast soup on a cold, cloud-shrouded morning (31st day, 5th month)","Months later he again collects seaweed and mussels here for broth, the morning after a night of rage-fueled fantasies about the Other (22nd day, 9th month)","Once found filled with excited flocking sparrows that swoop between the Eastern and Southern walls before scattering to perches (11th day, 6th month)","A small group of sparrows perches first on the 'Gardener' statue, then the Beehive-carrying Woman, prompting Piranesi's theory the birds honor industriousness (11th day, 6th month)","He heeds the birds' apparent warning that day and goes fishing, which saves him from going hungry when a storm drives fish away for two days (11th day, 6th month)","The vestibule holds roughly a thousand statues total, by his own estimate while puzzling over the birds' behavior (11th day, 6th month)","He later cites its digging 'Gardener' statue as one of the House's images that taught him the abstract concept of a garden (21st day, 8th month)","On the day of the Flood, the first floodwater tide is seen climbing the vestibule's easternmost staircase around half-past eleven in the morning (27th day, 9th month)"],"v22":["The tide rising here kept growing stronger as the confrontation with the Other unfolded, its booming audible from a distance (27th day, 9th month)","Its rising floodwaters were pushing toward and striking the walls of the Second and Third South-Western Halls nearby (27th day, 9th month)"],"v24":["Lies between the Sixth North-Western Hall and the Eighteenth North-Western Hall, where Piranesi stores water-collecting bowls (21st day, 9th month)","Piranesi habitually climbs the pebble bank here to fish and gather shellfish, always dislodging a few stones without altering its overall shape (21st day, 9th month)","Before spotting the message he notices a fresh hollow where pebbles are missing, and briefly suspects rooks or crows, which use stones to break shellfish (21st day, 9th month)","Statues line the vestibule's walls; dizzied after reading the message, Piranesi begs them for water, but they only gaze down with calm nobility (21st day, 9th month)","Reading the pebble message triggers his first vision of the Other World: a rain-soaked city intersection thronged with people he first mistakes for statues (21st day, 9th month)","The vision leaves him staggering, dizzy, parched and breathless (21st day, 9th month)","He later reasons that arranging the pebble message must have taken 16 a long time, proof of her patience and resolve to find him (22nd day, 9th month)","He returns to find the pebble message completely scattered across the pavement, which he blames on the Other's sabotage (22nd day, 9th month)","During the climactic Flood, it was one of the last two vestibules (with the Tenth) where Tides rose at noon, flooding the surrounding area (27th day, 9th month)"],"52w":["The golden light striking the wall makes its statues appear to be dissolving into the glow (19th day, 6th month).","The adjoining antechamber has few windows and feels cool and shadowy in contrast to the blazing hall (19th day, 6th month).","Piranesi passes through this hall while on a multi-hour trek toward the distant One-Hundred-and-Ninety-Second Western Hall (19th day, 6th month).","It falls along the route between the mussel-encrusted Forty-Fifth Vestibule and the rubble-strewn Seventy-Eighth Vestibule (19th day, 6th month).","Piranesi counts this hall among the 'many wonders' the House shows him that day (19th day, 6th month)."],"88w":["On his first visit he found forty-seven loose paper scraps scattered across the pavement, in addition to those in gull nests (19th day, 6th month).","Deciphering the fragments he made out the word 'slave' above the other torn phrases, and assumed one of the Thirteen Dead had written them (19th day, 6th month).","He chose not to detour around the hall's aggressive gulls, calculating that the alternate route would add roughly 1.7 kilometres (19th day, 6th month).","He privately wondered whether the scraps proved an unknown stranger existed in the house, but kept the suspicion hidden from the Other (26th day, 6th month).","Recalling the threatening scrap later gave him his first real sense of what enmity between two people actually felt like (26th day, 6th month).","Months later he returned, softening the gulls' dried droppings with fire-heated water and rags to free 79 scraps from 35 nests over two days (1st day, 9th month).","Assembling the recovered scraps revealed a captive's account of starvation and imprisonment, fed only near statues of minotaurs by his captor (1st day, 9th month).","The writer's account grew increasingly deranged, describing forgotten words, a statue that seemed to speak, and a resolve to kill his tormentor (1st day, 9th month).","He sorted the retrieved scraps into three envelopes according to how well the fragments fit together (1st day, 9th month).","Much later, re-examining the scraps, he noticed one fragment bore the number 231, matching a missing page from his own Journal no. 2.","That discovery led him to realize roughly thirty journal entries were missing, dated from 15 November to 20 December 2012.","It is eventually revealed that Piranesi's former self, Matthew Rose Sorensen, tore out and scattered these very pages himself, recording his own captivity."],"192w":["Reaching it means crossing the Seventy-Eighth Vestibule, a flood-prone region strewn with sharp broken marble that can cut bare feet (19th day, 6th month).","Piranesi could not attempt the trip until the Other gave him new shoes, having gone barefoot for about a year (16th-19th day, 6th month).","En route he passed a staircase overtaken by mussels, a hall ablaze with golden light, and a gull colony nesting in the Eighty-Eighth Western Hall (19th day, 6th month).","Its single door measures roughly four metres wide and eleven metres high, aligned with a window in the corridor outside (19th day, 6th month).","Before entering, Piranesi feared finding violent statues like those he once found in an Upper Hall near the Nineteenth Eastern Hall, but pushed past his fear (19th day, 6th month).","Unlike his usual sleeping hall, this one held no birds at all, which unsettled him as much as it seemed to unsettle any birds nearby (20th day, 6th month).","He sat about twenty metres inside facing the door and slept there overnight, soothed by the distant sound of the sea (20th day, 6th month).","Waking near midnight, he saw a full moon fill the doorway, lighting the statues as though they had all just turned to watch it rise (20th day, 6th month).","From the doorway he charted constellations he called the 'Good Mother', the Rose, the Lamp-post, the Shoemaker, and the Iron Snake (20th day, 6th month).","He judged the brightest visible star to be the tip of the 'Good Mother' constellation's outstretched arm (20th day, 6th month).","The moonlit scene here made Piranesi decide the search for the 'Great and Secret Knowledge' no longer mattered to him (20th day, 6th month).","Hearing his account, the Other resolved to travel there himself and perform the ritual, calling it riskier than anywhere he'd been before (22nd day, 6th month).","Two months later the Other's plan to hold the ritual there had been eclipsed by his mounting fear of the approaching visitor '16' (2nd day, 9th month).","The Other never reached the hall to carry out the ritual; he was killed in the Flood in the First Western Hall instead."],"960w":["The narrator names an entire personal-calendar year after this trip: 'the Year I travelled to the Nine-Hundred-and-Sixtieth Western Hall' (17th day, 5th month).","That named year is the one immediately preceding the current narrative year, the Year the Albatross came to the South-Western Halls (17th day, 5th month).","Journal notebooks No. 8 and No. 9 split their coverage of that year at the fifteenth day of its tenth month (17th day, 5th month).","In the year named for this journey, the Other's gifts included a new watch battery, ten notebooks, star-map paper, and forty-seven pens (17th day, 6th month)."],"38s":["The narrator once labelled a whole year in his personal calendar 'the Year I discovered the Coral Halls,' marking the find as a major life event.","On the day the albatross came to the South-Western Halls, Piranesi chose this hall and its onward succession as the highlight to show the Sixteenth Person (Raphael) (29th day, 9th month).","He picked the Coral Halls over the more dramatic Drowned Halls specifically because Raphael disliked climbing (29th day, 9th month).","Walking this route, Raphael admired the halls as 'astonishing' and 'perfect,' and Piranesi felt happy watching her reaction (29th day, 9th month).","Along the way to reach this stretch, the pair passed through the Tenth Southern Hall and detoured to see the 'People of the Alcove' (29th day, 9th month).","After the walk, at the Coral Halls, Piranesi noted the statues altered by coral: a woman crowned with coral with hands turned to stars or flowers, horned figures, a coral-caged lion, and a man holding a little box half engulfed in red-rose coral (29th day, 9th month)."],"890n":["Named in the same breath as the 960th Hall to the West and 768th Hall to the South, the three furthest points reached (7th day, 5th month)."]};
+
+  /* NICK: faithful epithets for map labels \u2014 each grounded in the text
+     (a statue, an event, or a name a character actually uses); [label, side] */
+  var NICK={
+    v1:["the Minotaur Room","t"],           // Raphael's name for it; 16's chalk calls it 'the entrance'
+    threshold:["\u2192 the Door to Battersea","r"],
+    "1n":["Hall of the Crows","t"],
+    "2n":["the Journal Cache","t"],
+    "3n":["\u2605 Home","r"],
+    "5n":["Hall of the Gorilla","l"],
+    "2s":["the Hour-long Flood","r"],
+    "10s":["the Turn to the Alcove","r"],
+    "19s":["Hall of the Hierophant","r"],
+    "1e":["Hall of the Pale Owl","b2"],
+    "2e":["the Prophet's Exit","b"],
+    "19e":["the Drop to the Drowned Halls","t"],
+    "20e":["under the Catalogued Hall","b"],
+    "1w":["Hall of the Horned Giants","b"],
+    "3w":["the Other's Landing","t"],
+    "4w":["Hall of the Dog-Fox","b"],
+    "6w":["the Gathering of the Birds","t"],
+    "11w":["the Windswept Crossing","t"],
+    "1nw":["the Prophet's Waypoint","l"],
+    "2nw":["the Quiet Hall","r"],
+    "3nw":["the Biscuit-Box Man","l"],
+    faun:["the Faun","r"],
+    "6nw":["the Chalk Messages","r"],
+    "18nw":["the Fresh-Water Bowls","r"],
+    "19nw":["the Broken Sword","l"],
+    "1ne":["Hall of the Prophet","r"],
+    "2ne":["the Birds' Prophecy","r"],
+    "18ne":["below the Concealed Person","r"],
+    "20ne":["the Fallen Ceilings","r"],
+    "6se":["the Folded-Up Child","r"],
+    "12se":["the Doorway to the Dance","r"],
+    "18se":["the Watching Window","r"],
+    "19se":["the Pruning Gardener","l"],
+    "23se":["the Star-Mappers","r"],
+    "1sw":["the First Catalogue","l"],
+    "2sw":["\u2605 the Meeting Place","l"],
+    "3sw":["the Catalogue Continues","l"],
+    "4sw":["the South-Western Halls","r"],
+    "14sw":["the People of the Alcove","r"],
+    v9:["the Joining of the Tides","l"],
+    v22:["the Tide up the Staircase","l"],
+    v24:["the Pebble Bank","l"],
+    "52w":["the Golden Wall","r"],
+    "88w":["the Gulls' Nests","r"],
+    "192w":["the Temple of the Moon","r"],
+    "960w":["furthest West","r"],
+    "38s":["the Coral Halls","l"],
+    "768s":["furthest South","r"],
+    "890n":["furthest North","r"]
+  };
+
+  var CATSTYLE={
+    hub:{fill:"var(--brass)",stroke:"var(--marble-stroke)",r:11,shape:"hub"},
+    threshold:{fill:"var(--brass)",stroke:"var(--brass)",r:8,shape:"gate"},
+    home:{fill:"var(--brass)",stroke:"var(--marble-stroke)",r:9,shape:"star"},
+    meeting:{fill:"none",stroke:"var(--patina)",r:9,shape:"ring2"},
+    vestibule:{fill:"var(--patina-soft)",stroke:"var(--patina)",r:8,shape:"hex"},
+    statue:{fill:"var(--brass)",stroke:"var(--marble-stroke)",r:6,shape:"diamond"},
+    dead:{fill:"var(--bone)",stroke:"var(--marble-stroke)",r:7,shape:"deaddiamond"},
+    hall:{fill:"var(--marble)",stroke:"var(--marble-stroke)",r:6,shape:"circle"},
+    far:{fill:"none",stroke:"var(--ink-dim)",r:7,shape:"beacon"}
+  };
+  var CATLABEL={hub:"Vestibule \u00b7 Hub",threshold:"Threshold",home:"The narrator's home",meeting:"Meeting place",
+    vestibule:"Vestibule",statue:"Statue-landmark",dead:"The Dead",hall:"Hall",far:"Far field (off-scale)"};
+
+  /* ---- build the scene ---- */
+  var vp=document.createElementNS(SVGNS,"g");        // panning viewport
+  svg.appendChild(vp);
+  var gGrid=mk("g"), gRing=mk("g"), gZone=mk("g"), gFlood=mk("g"), gRoute=mk("g"), gJourney=mk("g"), gNode=mk("g");
+  vp.appendChild(gZone); vp.appendChild(gGrid); vp.appendChild(gRing); vp.appendChild(gFlood); vp.appendChild(gRoute); vp.appendChild(gJourney); vp.appendChild(gNode);
+  function mk(t){return document.createElementNS(SVGNS,t);}
+  function set(el,a){for(var k in a)el.setAttribute(k,a[k]);return el;}
+
+  // East drowned/derelict zone
+  var zone=set(mk("rect"),{x:0.6*STEP,y:-30*STEP,width:40*STEP,height:60*STEP});
+  zone.style.fill="var(--tide-fill)"; gZone.appendChild(zone);
+  var zlab=set(mk("text"),{x:11*STEP,y:-9*STEP,class:"east-zone-label","transform":"rotate(-90 "+(11*STEP)+" "+(-9*STEP)+")"});
+  zlab.textContent="THE DERELICT EAST  \u00b7  THE DROWNED HALLS"; gZone.appendChild(zlab);
+
+  // tide shimmer: slow ambient wave-lines drifting through the drowned East
+  // (stilled entirely under prefers-reduced-motion via the global animation:none rule)
+  var defs=mk("defs"), clip=set(mk("clipPath"),{id:"eastClip"});
+  clip.appendChild(set(mk("rect"),{x:0.6*STEP,y:-30*STEP,width:40*STEP,height:60*STEP}));
+  defs.appendChild(clip); svg.insertBefore(defs,vp);
+  var gTide=set(mk("g"),{"clip-path":"url(#eastClip)"}); gZone.appendChild(gTide);
+  for(var wi=0;wi<7;wi++){
+    var wy=(-13+wi*4.4)*STEP, amp=4+(wi%3)*2, wl=150+(wi%4)*40, d="M "+(0.6*STEP)+" "+wy;
+    for(var wx=0.6*STEP;wx<=27*STEP;wx+=10){
+      d+=" L "+wx.toFixed(1)+" "+(wy+amp*Math.sin((wx/wl)*Math.PI*2+wi*1.7)).toFixed(1);
+    }
+    var wp=set(mk("path"),{d:d,class:"tidewave"});
+    wp.style.animationDuration=(14+wi*3)+"s";
+    wp.style.animationDelay=(-wi*2.3)+"s";
+    wp.style.opacity=(0.15+(wi%3)*0.05).toFixed(2);
+    gTide.appendChild(wp);
+  }
+
+  // grid: 8 rays + diagonal guide grid + rings
+  var EXT=26;
+  var rays=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[-1,1],[1,-1],[-1,-1]];
+  rays.forEach(function(d){
+    gGrid.appendChild(set(mk("line"),{x1:0,y1:0,x2:d[0]*EXT*STEP,y2:-d[1]*EXT*STEP,class:d[0]===0||d[1]===0?"grid-axis":"grid-line"}));
+  });
+  [5,10,15,20,25].forEach(function(n){
+    gRing.appendChild(set(mk("circle"),{cx:0,cy:0,r:n*STEP,class:"ring"}));
+    gRing.appendChild(set(mk("text"),{x:2,y:-n*STEP-3,class:"ring-label"})).textContent=n+" halls";
+  });
+  // compass letters
+  [["N",0,-1],["S",0,1],["E",1,0],["W",-1,0]].forEach(function(c){
+    var t=set(mk("text"),{x:c[1]*(EXT-1.4)*STEP,y:c[2]*(EXT-1.4)*STEP+4,class:"compass-label"});
+    t.textContent=c[0]; gGrid.appendChild(t);
+  });
+
+  // Flood zone: perilous region measured from 6th NW (-6,6): 6 W,4 N,5 E,6 S  -> x[-12,-1] y[2,10]
+  var fx1=-12,fx2=-1,fy1=2,fy2=10;
+  gFlood.appendChild(set(mk("ellipse"),{cx:((fx1+fx2)/2)*STEP,cy:-((fy1+fy2)/2)*STEP,rx:((fx2-fx1)/2+1.2)*STEP,ry:((fy2-fy1)/2+1.2)*STEP,class:"flood-ring"}));
+  var flab=set(mk("text"),{x:((fx1+fx2)/2)*STEP,y:-(fy2+1.9)*STEP,class:"flood-label","text-anchor":"middle"});
+  flab.textContent="The Flood \u00b7 Conjunction of Four Tides \u00b7 40\u2013100 halls"; gFlood.appendChild(flab);
+
+  // routes: home -> hub  (0,3)-(0,1)-(0,0)
+  gRoute.appendChild(set(mk("polyline"),{points:pts([[0,3],[0,1],[0,0]]),class:"route"}));
+  // long road west (schematic dashed axis to beacon)
+  gRoute.appendChild(set(mk("polyline"),{points:pts([[0,0],[-6,0],[-11,0],[-16,0]]),class:"route"}));
+
+  function pts(a){return a.map(function(p){return (p[0]*STEP)+","+(-p[1]*STEP);}).join(" ");}
+
+  // nodes
+  var nodeEls={};
+  P.forEach(function(p){
+    var x,y;
+    if(p.cat==="far"){ x=p.bx*p.r*STEP*0.9 + (p.bx?0:0); y=-p.by*p.r*STEP*0.9;
+      // small perpendicular stagger so western beacons don't overlap
+      if(p.bx!==0){ y += ({ "52w":-0.0,"88w":-0.9,"192w":0.9,"960w":-0.0 }[p.id]||0)*STEP; }
+      if(p.by!==0){ x += ({ "38s":-0.9,"768s":0.9 }[p.id]||0)*STEP; }
+    } else { x=(p.x+(p.vx||0))*STEP; y=-(p.y+(p.vy||0))*STEP; }
+    p._x=x; p._y=y;
+    var st=CATSTYLE[p.cat];
+    var g=set(mk("g"),{class:"node"+(p.always?" always":""),tabindex:"0",role:"button","data-cat":p.cat,
+      "aria-label":p.name});
+    var halo=set(mk("circle"),{cx:x,cy:y,r:st.r+6,class:"halo"}); g.appendChild(halo);
+    drawGlyph(g,x,y,st,p);
+    var nk=NICK[p.id]||[p.tag,"r"], side=nk[1]||"r";
+    var lbl=(p.cat==="far")?(p.tag+"  "+nk[0]):nk[0];
+    var lx2,ly2,ta;
+    if(side==="l"){ta="end";lx2=x-st.r-7;ly2=y+3.2;}
+    else if(side==="t"){ta="middle";lx2=x;ly2=y-st.r-8;}
+    else if(side==="b"){ta="middle";lx2=x;ly2=y+st.r+13;}
+    else if(side==="b2"){ta="middle";lx2=x;ly2=y+st.r+24;}
+    else{ta="start";lx2=x+st.r+7;ly2=y+3.2;}
+    var tg=set(mk("text"),{x:lx2,y:ly2,class:"tag","text-anchor":ta}); tg.textContent=lbl; g.appendChild(tg);
+    g.__p=p;
+    g.addEventListener("mouseenter",function(){select(p);});
+    g.addEventListener("focus",function(){select(p);});
+    g.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();select(p,true);}});
+    gNode.appendChild(g); nodeEls[p.id]=g; p._g=g;
+  });
+
+  function paint(el,fill,stroke,sw){ if(fill!==undefined)el.style.fill=fill; if(stroke!==undefined)el.style.stroke=stroke; if(sw!==undefined)el.style.strokeWidth=sw; return el; }
+  function drawGlyph(g,x,y,st,p){
+    var s=st.shape,r=st.r;
+    function base(el){ el.setAttribute("class","glyph"); return paint(el,st.fill,st.stroke); }
+    if(s==="circle"){ g.appendChild(base(set(mk("circle"),{cx:x,cy:y,r:r}))); }
+    else if(s==="hub"){
+      g.appendChild(base(set(mk("circle"),{cx:x,cy:y,r:r})));
+      g.appendChild(paint(set(mk("circle"),{cx:x,cy:y,r:r-4}),"var(--ground)","none"));
+      g.appendChild(paint(set(mk("circle"),{cx:x,cy:y,r:2.4}),st.fill,"none"));
+    }
+    else if(s==="hex"||s==="diamond"||s==="deaddiamond"){
+      var pts6 = (s==="hex")? poly(x,y,r,6,30) : poly(x,y,r,4,0);
+      g.appendChild(base(set(mk("polygon"),{points:pts6})));
+      if(s==="deaddiamond") g.appendChild(paint(set(mk("circle"),{cx:x,cy:y,r:1.7}),"var(--marble-stroke)","none"));
+    }
+    else if(s==="star"){ g.appendChild(base(set(mk("polygon"),{points:star(x,y,r,r*0.44,5)}))); }
+    else if(s==="ring2"){
+      g.appendChild(base(set(mk("circle"),{cx:x,cy:y,r:r})));
+      g.appendChild(paint(set(mk("circle"),{cx:x,cy:y,r:r-3.5,class:"glyph"}),"none",st.stroke,"1"));
+      g.appendChild(paint(set(mk("circle"),{cx:x,cy:y,r:2}),st.stroke,"none"));
+    }
+    else if(s==="gate"){
+      // a little archway with an arrow pointing out toward our world
+      g.appendChild(paint(set(mk("path"),{class:"glyph",d:"M "+(x-6)+" "+(y+6)+" L "+(x-6)+" "+(y-3)+" A 6 6 0 0 1 "+(x+6)+" "+(y-3)+" L "+(x+6)+" "+(y+6)}),"none",st.stroke,"1.6"));
+      g.appendChild(paint(set(mk("line"),{class:"glyph",x1:x,y1:y-9,x2:x+9,y2:y-16}),undefined,st.stroke,"1.4"));
+      g.appendChild(paint(set(mk("polygon"),{points:(x+9)+","+(y-16)+" "+(x+4.5)+","+(y-14.5)+" "+(x+7.5)+","+(y-11)}),st.stroke,"none"));
+    }
+    else if(s==="beacon"){
+      var dir=p.bx<0?"W":(p.bx>0?"E":(p.by<0?"S":"N"));
+      var chev = dir==="W"? [[6,-6],[-4,0],[6,6]] : dir==="S"? [[-6,-6],[0,4],[6,-6]] : dir==="N"? [[-6,6],[0,-4],[6,6]] : [[-6,-6],[4,0],[-6,6]];
+      g.appendChild(paint(set(mk("polyline"),{class:"glyph",points:chev.map(function(c){return (x+c[0])+","+(y+c[1]);}).join(" "),"stroke-linecap":"round","stroke-linejoin":"round"}),"none",st.stroke,"1.6"));
+      g.appendChild(paint(set(mk("circle"),{cx:x,cy:y,r:1.6}),st.stroke,"none"));
+    }
+  }
+  function poly(cx,cy,r,n,rot){var s="";for(var i=0;i<n;i++){var a=(rot+i*360/n)*Math.PI/180;s+=(cx+r*Math.cos(a))+","+(cy+r*Math.sin(a))+" ";}return s.trim();}
+  function star(cx,cy,ro,ri,n){var s="";for(var i=0;i<n*2;i++){var r=i%2?ri:ro;var a=(-90+i*180/n)*Math.PI/180;s+=(cx+r*Math.cos(a))+","+(cy+r*Math.sin(a))+" ";}return s.trim();}
+
+  /* ---- selection / index card ---- */
+  var card=document.getElementById("card");
+  var levelEls={}; [].forEach.call(document.querySelectorAll(".lvl"),function(l){levelEls[l.dataset.lvl]=l;});
+  var selPinned=null, curSel=null;
+  function coordLabel(p){
+    return p.cat==="far"? p.truec : (p.cat==="threshold"? "SE corner of V\u00b7I" : "("+fmt(p.x)+" E, "+fmt(p.y)+" N)");
+  }
+  function select(p,pin,jctx){
+    if(!pin && selPinned) return;                       // a pinned entry stays put
+    if(pin==="force") selPinned=p.id;                   // journey steps always pin
+    else if(pin) selPinned = (selPinned===p.id ? null : p.id); // re-click releases
+    if(curSel&&curSel._g) curSel._g.classList.remove("sel");
+    curSel=p; p._g.classList.add("sel");
+    // level highlight
+    for(var k in levelEls) levelEls[k].classList.toggle("active",k===p.lvl);
+    card.innerHTML=
+      '<p class="kicker">'+(jctx?'The Narrator\u2019s Thread \u00b7 Stop '+jctx.stop+' of '+jctx.total:'From the Catalogue')+'</p>'+
+      '<h2>'+esc(p.name)+'</h2>'+
+      '<div class="subtag mono">'+esc((NICK[p.id]?NICK[p.id][0].replace(/[\u2605\u2192]/g,"").trim()+' \u00b7 ':'')+(p.tag.replace(/[\u2605\u2192]/g,"").trim()||p.tag))+'</div>'+
+      (jctx?'<div class="jnote"><span class="jwhen">'+esc(jctx.when)+'</span>'+esc(jctx.note)+'</div>':'')+
+      '<dl class="meta">'+
+        '<dt>Address</dt><dd class="coord-chip mono">'+coordLabel(p)+'</dd>'+
+        '<dt>Level</dt><dd>'+p.lvl+' Hall</dd>'+
+        '<dt>Kind</dt><dd><span class="badge" style="color:'+badgeColor(p.cat)+'">'+CATLABEL[p.cat]+'</span></dd>'+
+      '</dl>'+
+      '<p class="desc">'+esc(p.desc)+'</p>'+
+      '<blockquote class="quote">"'+esc(p.q)+'"<cite>\u2014 Journal, '+esc(p.d)+'</cite></blockquote>'+
+      ((MORE[p.id]&&MORE[p.id].length)?
+        '<h4 class="morehead">From the Journals</h4><ul class="more">'+
+        MORE[p.id].map(function(s){return '<li>'+esc(s)+'</li>';}).join("")+'</ul>':'')+
+      (selPinned===p.id?'<p class="pin-note">Pinned \u2014 click the marker again, or the open water, to release.</p>':'');
+  }
+  function badgeColor(c){return ({vestibule:"var(--patina)",statue:"var(--brass)",dead:"var(--bone)",home:"var(--brass)",
+    meeting:"var(--patina)",threshold:"var(--brass)",hub:"var(--brass)",far:"var(--ink-dim)"})[c]||"var(--ink-dim)";}
+  function fmt(n){return (n>0?"+":"")+n;}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+  /* ---- layers ---- */
+  [].forEach.call(document.querySelectorAll(".chip"),function(ch){
+    ch.addEventListener("click",function(){
+      var on=ch.getAttribute("aria-pressed")==="true"; ch.setAttribute("aria-pressed",on?"false":"true");
+      var L=ch.dataset.layer;
+      if(L==="grid"){ gGrid.style.display=on?"none":""; gRing.style.display=on?"none":""; }
+      else if(L==="route"){ gRoute.style.display=on?"none":""; }
+      else if(L==="flood"){ gFlood.style.display=on?"none":""; }
+      else if(L==="thread"){ gJourney.style.display=on?"none":"";
+        document.getElementById("jpanel").style.display=on?"none":"flex"; }
+      else if(L==="names"){ svg.classList[on?"remove":"add"]("lbls"); }
+      else { // node categories
+        P.forEach(function(p){ if(p.cat===L && p._g) p._g.style.display=on?"none":""; });
+      }
+    });
+  });
+
+  /* ---- pan & zoom ---- */
+  var scale=1,tx=0,ty=0,W=0,H=0;
+  function applyVp(){ vp.setAttribute("transform","translate("+tx+" "+ty+") scale("+scale+")"); }
+  function resize(){ var r=svg.getBoundingClientRect(); W=r.width; H=r.height; svg.setAttribute("viewBox","0 0 "+W+" "+H); }
+  function recenter(){ resize(); scale=Math.max(0.55,Math.min(0.92, W/760)); tx=W*0.47; ty=H*0.5; applyVp(); }
+  window.addEventListener("resize",function(){ resize(); applyVp(); });
+
+  // one pointer = drag-pan; two = pinch-zoom; a still pointer released = tap (pin / unpin)
+  var dragging=false,sx=0,sy=0,otx=0,oty=0,moved=false;
+  var ptrs={},pinchD=0,pinchMx=0,pinchMy=0,tapEl=null;
+  function pcount(){var n=0,k;for(k in ptrs)n++;return n;}
+  function ppair(){var a=[],k;for(k in ptrs){a.push(ptrs[k]);if(a.length===2)break;}return a;}
+  svg.addEventListener("pointerdown",function(e){
+    if(e.pointerType==="mouse"&&e.button!==0)return;
+    ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+    svg.setPointerCapture(e.pointerId);
+    if(pcount()===1){
+      dragging=true;moved=false;sx=e.clientX;sy=e.clientY;otx=tx;oty=ty;
+      tapEl=(e.target.closest?e.target.closest(".node"):null);
+      svg.classList.add("grabbing");
+    }else if(pcount()===2){
+      dragging=false;moved=true;
+      var ab=ppair(),r=svg.getBoundingClientRect();
+      pinchD=Math.hypot(ab[0].x-ab[1].x,ab[0].y-ab[1].y)||1;
+      pinchMx=(ab[0].x+ab[1].x)/2-r.left; pinchMy=(ab[0].y+ab[1].y)/2-r.top;
+    }
+  });
+  svg.addEventListener("pointermove",function(e){
+    if(!(e.pointerId in ptrs))return;
+    ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+    if(pcount()>=2){
+      var ab=ppair(),r=svg.getBoundingClientRect();
+      var d=Math.hypot(ab[0].x-ab[1].x,ab[0].y-ab[1].y)||1;
+      var mx=(ab[0].x+ab[1].x)/2-r.left,my=(ab[0].y+ab[1].y)/2-r.top;
+      zoomAt(mx,my,d/pinchD); pinchD=d;
+      tx+=mx-pinchMx; ty+=my-pinchMy; pinchMx=mx; pinchMy=my; applyVp();
+      return;
+    }
+    if(!dragging)return;
+    var dx=e.clientX-sx,dy=e.clientY-sy;
+    if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
+    tx=otx+dx; ty=oty+dy; applyVp();
+  });
+  function endPointer(e){
+    if(!(e.pointerId in ptrs))return;
+    delete ptrs[e.pointerId];
+    if(pcount()===1){ var ab=ppair(); dragging=true; moved=true; sx=ab[0].x; sy=ab[0].y; otx=tx; oty=ty; }
+    else if(pcount()===0){
+      dragging=false; svg.classList.remove("grabbing");
+      if(!moved){
+        if(tapEl&&tapEl.__p) select(tapEl.__p,true);
+        else if(selPinned){ selPinned=null; if(curSel) select(curSel); }
+      }
+      tapEl=null;
+    }
+  }
+  svg.addEventListener("pointerup",endPointer);
+  svg.addEventListener("pointercancel",endPointer);
+  svg.addEventListener("wheel",function(e){ e.preventDefault(); var r=svg.getBoundingClientRect();
+    var mx=e.clientX-r.left,my=e.clientY-r.top; var f=e.deltaY<0?1.12:1/1.12; zoomAt(mx,my,f); },{passive:false});
+  function zoomAt(mx,my,f){ var ns=Math.max(0.4,Math.min(4.5,scale*f)); tx=mx-(mx-tx)*(ns/scale); ty=my-(my-ty)*(ns/scale); scale=ns; applyVp(); }
+  document.getElementById("zoomIn").addEventListener("click",function(){ zoomAt(W/2,H/2,1.25); });
+  document.getElementById("zoomOut").addEventListener("click",function(){ zoomAt(W/2,H/2,1/1.25); });
+  document.getElementById("zoomReset").addEventListener("click",recenter);
+
+  /* ---- search ---- */
+  var sIn=document.getElementById("searchInput"), sRes=document.getElementById("searchResults");
+  var sMatches=[], sActive=-1;
+  function flyTo(p){
+    var ns=Math.min(4.5,Math.max(scale,1.15));
+    var tx1=W/2-p._x*ns, ty1=H/2-p._y*ns;
+    if(matchMedia("(prefers-reduced-motion:reduce)").matches){ scale=ns;tx=tx1;ty=ty1;applyVp(); return; }
+    var s0=scale,x0=tx,y0=ty,t0=null;
+    function stepFn(t){
+      if(t0===null)t0=t;
+      var k=Math.min(1,(t-t0)/450), ease=1-Math.pow(1-k,3);
+      scale=s0+(ns-s0)*ease; tx=x0+(tx1-x0)*ease; ty=y0+(ty1-y0)*ease; applyVp();
+      if(k<1)requestAnimationFrame(stepFn);
+    }
+    requestAnimationFrame(stepFn);
+  }
+  function sRender(){
+    sRes.innerHTML="";
+    sMatches.forEach(function(p,i){
+      var d=document.createElement("div");
+      d.className="sr"+(i===sActive?" active":""); d.setAttribute("role","option");
+      d.innerHTML='<div class="srn">'+esc(p.name)+'</div>'+
+        '<div class="srt">'+esc(coordLabel(p))+' \u00b7 '+esc(CATLABEL[p.cat])+'</div>';
+      d.addEventListener("pointerdown",function(e){e.preventDefault();}); // keep input focus so click lands
+      d.addEventListener("click",function(){ sGo(p); });
+      sRes.appendChild(d);
+    });
+  }
+  function sQuery(q){
+    q=q.trim().toLowerCase();
+    if(!q){ sMatches=[]; sActive=-1; sRender(); return; }
+    var scored=[];
+    P.forEach(function(p){
+      var hay=(p.name+" "+p.tag+" "+(NICK[p.id]?NICK[p.id][0]:"")+" "+CATLABEL[p.cat]).toLowerCase();
+      var i=hay.indexOf(q), j=p.desc.toLowerCase().indexOf(q);
+      if(i>=0) scored.push([i,p]);
+      else if(j>=0) scored.push([1000+j,p]);
+    });
+    scored.sort(function(a,b){return a[0]-b[0];});
+    sMatches=scored.slice(0,8).map(function(s){return s[1];});
+    sActive=sMatches.length?0:-1;
+    sRender();
+  }
+  function sGo(p){
+    sIn.value=""; sQuery(""); sIn.blur();
+    selPinned=null; select(p,true);
+    flyTo(p);
+  }
+  sIn.addEventListener("input",function(){ sQuery(sIn.value); });
+  sIn.addEventListener("focus",function(){ sQuery(sIn.value); });
+  sIn.addEventListener("blur",function(){ setTimeout(function(){ if(document.activeElement!==sIn) sRes.innerHTML=""; },150); });
+  sIn.addEventListener("keydown",function(e){
+    if(e.key==="ArrowDown"){ e.preventDefault(); if(sMatches.length){ sActive=(sActive+1)%sMatches.length; sRender(); } }
+    else if(e.key==="ArrowUp"){ e.preventDefault(); if(sMatches.length){ sActive=(sActive-1+sMatches.length)%sMatches.length; sRender(); } }
+    else if(e.key==="Enter"){ if(sActive>=0) sGo(sMatches[sActive]); }
+    else if(e.key==="Escape"){ sIn.value=""; sQuery(""); sIn.blur(); }
+  });
+
+  /* ---- the narrator's thread: his path across the whole novel ---- */
+  var byId={}; P.forEach(function(pp){byId[pp.id]=pp;});
+  var JOURNEY=[
+    {id:"3n",when:"Where it begins",note:"Home among the Thousand Statues \u2014 bed, journals, fish-drying racks. Every expedition of the novel sets out from here, and returns here."},
+    {id:"v9",when:"1st day, 5th Month",note:"The opening entry: by moonlight he climbs the Statues while three Tides join beneath him \u2014 a conjunction that comes once in eight years, and which he alone foresaw."},
+    {id:"18se",when:"7th day, 5th Month",note:"From a high Window he watches the Other standing at his own lit window across the Great Courtyard \u2014 the only other living person in the World."},
+    {id:"3nw",when:"10th day, 5th Month",note:"His round of the Dead begins with the Biscuit-Box Man, brought offerings of food, drink and water-lilies in his Empty Niche."},
+    {id:"6se",when:"10th day, 5th Month",note:"He tidies the small bones of the Folded-Up Child and talks to her gently, as he always does."},
+    {id:"14sw",when:"10th day, 5th Month",note:"Last, the People of the Alcove \u2014 ten skeletons and a monkey he honours without knowing, yet, whose missing persons they are."},
+    {id:"faun",when:"18th day, 5th Month",note:"He rests beneath his best-beloved Statue, the Faun with a finger to his lips, who speaks comfort to him in dreams."},
+    {id:"2sw",when:"29th day, 5th Month",note:"A regular meeting with the Other: talk of the Great and Secret Knowledge \u2014 and a casual warning that the Second Southern Hall will shortly flood."},
+    {id:"11w",when:"30th day, 5th Month",note:"Bound west for the Forty-Third Vestibule, he is knocked from Paving Stone to Paving Stone by the great Wind."},
+    {id:"6w",when:"31st day, 5th Month",note:"The birds have deserted the inhabited Halls. He finds them all here \u2014 silent on the Statues \u2014 while clouds pour in through the broken Ceilings of the North-East."},
+    {id:"19e",when:"10th day, 6th Month",note:"Deep in the derelict East he descends thirty metres from a cloud-filled Upper Hall into the Drowned Halls."},
+    {id:"2ne",when:"11th day, 6th Month",note:"The birds fly from Statue to Statue and he reads their message \u2014 a prophecy of destroyed work and of writing, understood only much later."},
+    {id:"192w",when:"15th day, 6th Month",note:"A twenty-kilometre march west to test the Other\u2019s story: the dark, windowless \u2018temple\u2019 Hall where a Crowd of Statues faces the Moon."},
+    {id:"88w",when:"19th day, 6th Month",note:"Walking home past the Hall of golden light (52\u00b7W), he finds herring-gull nests woven with torn scraps of his own missing Journals."},
+    {id:"1ne",when:"the 7th Month",note:"An old man in shafts of light \u2014 the Prophet, Laurence Arne-Sayles \u2014 tells him the World\u2019s hidden history: Ketterley, a prisoner, and the coming of 16."},
+    {id:"4w",when:"the 7th Month",note:"Following the route he was given, he waits near the Dog-Fox for a first far-off glimpse of 16 \u2014 the person the Other swears has come to drive him mad."},
+    {id:"23se",when:"1st day, 8th Month",note:"He sees 16 in this Hall and presses himself into the gaps between Statues, exactly as he has practised."},
+    {id:"2n",when:"the 8th Month",note:"Behind the Angel caught on the Rose Bush he retrieves his earliest Journals \u2014 and finds entries, in his own hand, from a world he cannot remember."},
+    {id:"6nw",when:"13th day, 9th Month",note:"Among the rooks he keeps a chalk correspondence with 16 \u2014 warnings, questions and directions traded on the Walls."},
+    {id:"v24",when:"21st day, 9th Month",note:"On the bank of marble pebbles 16 has written: ARE YOU MATTHEW ROSE SORENSEN? The name tolls through him like a bell."},
+    {id:"1w",when:"27th day, 9th Month",note:"The reckoning. Ketterley hunts him with a gun as Four Tides join; he and Raphael ride out the Flood high on a Horned Giant. The Other does not."},
+    {id:"10s",when:"29th day, 9th Month",note:"He leads Raphael south to meet his Dead, detouring to the People of the Alcove \u2014 whose names he can at last guess \u2014 towards the far Coral Halls."},
+    {id:"threshold",when:"1st day, 10th Month",note:"With Raphael he walks into the South-Eastern corner, between the Minotaurs, through the shimmer \u2014 out of the World, into the rain of Battersea."},
+    {id:"19nw",when:"29 November 2018",note:"Epilogue: he comes back often now, and guides others. In a kneeling figure with a broken sword he recognises Dr Ketterley \u2014 and is kind to him."}
+  ];
+  // smooth thread through the stops (Catmull-Rom -> cubic Bezier)
+  function r1(n){return Math.round(n*10)/10;}
+  var jPts=JOURNEY.map(function(s){var pp=byId[s.id];return {x:pp._x,y:pp._y};});
+  var dTh="M "+r1(jPts[0].x)+" "+r1(jPts[0].y);
+  for(var ji=0;ji<jPts.length-1;ji++){
+    var q0=jPts[Math.max(0,ji-1)],q1=jPts[ji],q2=jPts[ji+1],q3=jPts[Math.min(jPts.length-1,ji+2)];
+    dTh+=" C "+r1(q1.x+(q2.x-q0.x)/6)+" "+r1(q1.y+(q2.y-q0.y)/6)+" "
+             +r1(q2.x-(q3.x-q1.x)/6)+" "+r1(q2.y-(q3.y-q1.y)/6)+" "+r1(q2.x)+" "+r1(q2.y);
+  }
+  gJourney.appendChild(set(mk("path"),{d:dTh,class:"thread"}));
+  var stopEls=[];
+  JOURNEY.forEach(function(s,i){
+    var pp=byId[s.id], cx=pp._x+12, cy=pp._y-12;
+    var g=set(mk("g"),{class:"jstop",role:"button","aria-label":"Stop "+(i+1)+": "+pp.name});
+    g.appendChild(set(mk("circle"),{cx:cx,cy:cy,r:7.4}));
+    var t=set(mk("text"),{x:cx,y:cy+2.8}); t.textContent=String(i+1); g.appendChild(t);
+    g.addEventListener("pointerdown",function(e){e.stopPropagation();}); // don't start a pan
+    g.addEventListener("click",function(e){e.stopPropagation();jGo(i);});
+    gJourney.appendChild(g); stopEls.push(g);
+  });
+  var jIdx=-1, jLab=document.getElementById("jLab");
+  function jGo(i){
+    if(i<0||i>=JOURNEY.length)return;
+    if(jIdx>=0) stopEls[jIdx].classList.remove("jcur");
+    jIdx=i; stopEls[i].classList.add("jcur");
+    var s=JOURNEY[i], pp=byId[s.id];
+    select(pp,"force",{stop:i+1,total:JOURNEY.length,when:s.when,note:s.note});
+    flyTo(pp);
+    jLab.innerHTML='<b>'+(i+1)+' / '+JOURNEY.length+'</b> \u00b7 '+esc(pp.tag);
+  }
+  document.getElementById("jNext").addEventListener("click",function(){ jGo(jIdx<0?0:Math.min(jIdx+1,JOURNEY.length-1)); });
+  document.getElementById("jPrev").addEventListener("click",function(){ if(jIdx>0)jGo(jIdx-1); });
+  document.addEventListener("keydown",function(e){
+    var tg=e.target; if(tg&&(tg.tagName==="INPUT"||tg.tagName==="TEXTAREA"))return;
+    if(gJourney.style.display==="none")return;
+    if(e.key==="ArrowRight"){ e.preventDefault(); jGo(jIdx<0?0:Math.min(jIdx+1,JOURNEY.length-1)); }
+    else if(e.key==="ArrowLeft"){ e.preventDefault(); if(jIdx>0)jGo(jIdx-1); }
+  });
+  jLab.innerHTML='The Narrator\u2019s Thread \u2014 <b>24 stops</b>';
+
+  /* ---- theme toggle ---- */
+  var tb=document.getElementById("themeBtn");
+  function curTheme(){ var t=document.documentElement.getAttribute("data-theme");
+    if(t)return t; return matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"; }
+  function syncBtn(){ tb.textContent = curTheme()==="dark" ? "Change light" : "Change dark"; }
+  tb.addEventListener("click",function(){ var n=curTheme()==="dark"?"light":"dark";
+    document.documentElement.setAttribute("data-theme",n); syncBtn(); });
+  syncBtn();
+
+  /* ---- init ---- */
+  svg.classList.add("lbls"); // names on by default; the Names chip toggles back to hover-only
+  gJourney.style.display="none";                              // the Thread starts hidden;
+  document.getElementById("jpanel").style.display="none";     // its chip turns it on
+  recenter();
+  select(P[0]); // First Vestibule
+})();
+</script>
+</body>
+</html>
